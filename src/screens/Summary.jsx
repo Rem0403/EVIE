@@ -84,7 +84,7 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
           </div>
           {s.rescueMedGiven && <p className="small">Rescue medication given</p>}
           {s.note && <p className="small">{s.note}</p>}
-          {(s.clipUrl || s.clipStatus === 'done') && (
+          {s.clipStatus === 'done' && (
             <>
               <div className="no-print"><Media entry={s} kind="clip" className="entry-clip" /></div>
               <p className="small print-only">Video clip available in the EVIE app</p>

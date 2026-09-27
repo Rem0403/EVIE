@@ -1,7 +1,7 @@
 # EVIE Demo Runbook
 
 **Live URL:** https://<project>.web.app   (demo seeding: add `?demo=1`)
-**Backup:** `npm run dev` on laptop → open the "Network" URL on the phone (camera capture needs HTTPS, so pre-attach clips from files if using the backup).
+**Backup:** `npm run dev` on laptop → open the "Network" URL on the phone (phones must be able to reach the laptop: same network, firewall open for the port).
 **Last resort:** screen recording in `Demo recording.mp4`.
 
 ## Before going on stage

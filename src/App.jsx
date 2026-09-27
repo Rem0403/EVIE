@@ -118,7 +118,7 @@ export default function App() {
           <Summary
             circle={circle}
             entries={entries}
-            days={screen.days || 7}
+            days={screen.days || 30}
             onDaysChange={(days) => go({ name: 'summary', days })}
             onBack={home}
             onOpen={(id) => go({ name: 'detail', id, back: screen })}

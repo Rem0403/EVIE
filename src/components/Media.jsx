@@ -6,9 +6,8 @@ const LABELS = { clip: 'Clip', photo: 'Photo' };
 
 // Shows an entry's clip or photo if this phone has it, otherwise says whose phone does.
 export default function Media({ entry, kind, className, preload = 'none' }) {
-  const legacyUrl = entry[`${kind}Url`]; // entries from before media moved on-device
-  const saved = !legacyUrl && entry[`${kind}Status`] === 'done';
-  const [src, setSrc] = useState(legacyUrl || null);
+  const saved = entry[`${kind}Status`] === 'done';
+  const [src, setSrc] = useState(null);
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {

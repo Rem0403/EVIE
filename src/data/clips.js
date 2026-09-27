@@ -13,10 +13,12 @@ export async function attachMedia(circleId, entryId, file, kind, onProgress) {
   updateEntry(circleId, entryId, { [statusField]: 'uploading' }).catch(() => {});
   try {
     await putMedia(`${kind}:${entryId}`, blob);
-    onProgress?.(1);
-    await updateEntry(circleId, entryId, { [statusField]: 'done', [onField]: loadSession()?.name || 'another' });
   } catch (err) {
     updateEntry(circleId, entryId, { [statusField]: 'failed' }).catch(() => {});
     throw err;
   }
+  onProgress?.(1);
+  // Queued locally and synced later, so offline this must not wait for the server.
+  updateEntry(circleId, entryId, { [statusField]: 'done', [onField]: loadSession()?.name || 'another' })
+    .catch((err) => console.error('clip status update failed', err));
 }

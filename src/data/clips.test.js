@@ -8,7 +8,10 @@ import { attachMedia } from './clips.js';
 import { putMedia } from '../lib/mediaStore.js';
 import { updateEntry } from './entries.js';
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  updateEntry.mockImplementation(() => Promise.resolve());
+});
 
 it('keeps the clip on this phone and records whose phone has it', async () => {
   const file = new File(['x'], 'clip.mov', { type: '' });
@@ -23,4 +26,11 @@ it('marks the clip failed when the phone cannot store it', async () => {
   putMedia.mockRejectedValueOnce(new Error('QuotaExceededError'));
   await expect(attachMedia('c1', 'e1', new File(['x'], 'p.jpg', { type: 'image/jpeg' }), 'photo')).rejects.toThrow();
   expect(updateEntry).toHaveBeenLastCalledWith('c1', 'e1', { photoStatus: 'failed' });
+});
+
+it('finishes once the clip is on this phone, without waiting for the server (offline)', async () => {
+  updateEntry.mockReturnValue(new Promise(() => {})); // Firestore never acknowledges while offline
+  const done = attachMedia('c1', 'e1', new File(['x'], 'clip.mp4', { type: 'video/mp4' }), 'clip');
+  await expect(Promise.race([done.then(() => 'done'), new Promise((r) => setTimeout(() => r('hung'), 50))])).resolves.toBe('done');
+  expect(updateEntry).toHaveBeenLastCalledWith('c1', 'e1', { clipStatus: 'done', clipOn: 'Remy' });
 });
