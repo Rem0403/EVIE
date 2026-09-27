@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isMember(circleId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.memberIds;
+    }
+
+    match /circles/{circleId} {
+      // Any signed-in user may read circles (needed for join-by-code lookup).
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.memberIds == [request.auth.uid];
+      allow update: if signedIn() && (
+        request.auth.uid in resource.data.memberIds
+        || (
+          // A non-member may only add their own uid to memberIds.
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+          && request.resource.data.memberIds.removeAll(resource.data.memberIds) == [request.auth.uid]
+          && resource.data.memberIds.removeAll(request.resource.data.memberIds).size() == 0
+        )
+      );
+
+      match /members/{uid} {
+        allow read: if isMember(circleId);
+        allow write: if uid == request.auth.uid && isMember(circleId);
+      }
+
+      match /entries/{entryId} {
+        allow read, create, update: if isMember(circleId);
+        allow delete: if isMember(circleId) && resource.data.createdBy == request.auth.uid;
+      }
+    }
+  }
+}
