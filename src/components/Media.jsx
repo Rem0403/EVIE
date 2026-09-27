@@ -34,6 +34,6 @@ export default function Media({ entry, kind, className, preload = 'none' }) {
     return <p className="entry-meta with-icon"><Icon name={kind} size={16} />{`${LABELS[kind]} saved on ${on ? `${on}'s` : 'another'} phone`}</p>;
   }
   if (!src) return null;
-  if (kind === 'photo') return <img data-testid="media-photo" className={className || 'photo'} src={src} alt="Attached to this note" />;
+  if (kind === 'photo') return <img data-testid="media-photo" className={className || 'photo'} src={src} loading="lazy" decoding="async" alt="Attached to this note" />;
   return <video data-testid="media-clip" className={className} src={src} controls playsInline preload={preload} />;
 }

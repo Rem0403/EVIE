@@ -25,7 +25,7 @@ const QUICK_TYPES = [
   ['note', 'Note'],
 ];
 
-export default function Timeline({ circle, me, entries, demo, onOpen, onLogSeizure, onQuickLog, onSummary, onLeave }) {
+export default function Timeline({ circle, me, entries, loading = false, demo, onOpen, onLogSeizure, onQuickLog, onSummary, onLeave }) {
   const [filter, setFilter] = useState('all');
   const [chooser, setChooser] = useState(false);
   const [toast, setToast] = useFlash();
@@ -67,7 +67,9 @@ export default function Timeline({ circle, me, entries, demo, onOpen, onLogSeizu
         <ChipGroup options={FILTERS} value={filter} onChange={setFilter} />
       </div>
 
-      {groups.length === 0 && (
+      {loading && [0, 1, 2].map((i) => <div key={i} className="card skeleton" aria-hidden="true" />)}
+
+      {!loading && groups.length === 0 && (
         <div className="empty">
           {filter === 'all'
             ? 'Nothing logged yet. Tap Seizure or + Log to add the first entry.'

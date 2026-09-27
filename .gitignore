@@ -1,4 +1,36 @@
-﻿node_modules/
-.vscode/extensions/
-*.log
+# Dependencies
+node_modules/
+
+# Build output (rebuilt by `npm run build` / Docker)
+dist/
+*.tsbuildinfo
+
+# Secrets and local config (.env.example stays tracked as the template)
 .env
+.env.*
+!.env.example
+.npmrc
+
+# Firebase CLI cache and debug logs
+.firebase/
+*-debug.log
+firebase-debug.*.log
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Agent workspace
+.superpowers/
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

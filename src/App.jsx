@@ -20,6 +20,7 @@ export default function App() {
   const [circle, setCircle] = useState(null);
   const [name, setName] = useState('');
   const [entries, setEntries] = useState([]);
+  const [entriesLoaded, setEntriesLoaded] = useState(false);
   // Reopen an unsaved seizure after a reload so its timing isn't lost.
   const [screen, setScreen] = useState(() => (loadSeizureDraft() ? { name: 'seizure' } : { name: 'timeline' }));
 
@@ -51,7 +52,18 @@ export default function App() {
 
   useEffect(() => {
     if (!circle) return undefined;
-    return subscribeEntries(circle.id, setEntries, (err) => console.error('entries subscription', err));
+    setEntriesLoaded(false);
+    return subscribeEntries(
+      circle.id,
+      (list) => {
+        setEntries(list);
+        setEntriesLoaded(true);
+      },
+      (err) => {
+        console.error('entries subscription', err);
+        setEntriesLoaded(true);
+      },
+    );
   }, [circle?.id]);
 
   function handleJoined(c, n) {
@@ -119,6 +131,7 @@ export default function App() {
             circle={circle}
             me={me}
             entries={entries}
+            loading={!entriesLoaded}
             demo={DEMO}
             onOpen={(id) => go({ name: 'detail', id })}
             onLogSeizure={() => go({ name: 'seizure' })}
