@@ -34,6 +34,11 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 **Firestore rules are the authorization boundary.** Final. 2026-09-28.
 - **Rules:** `createdBy` must equal the signed-in user and can't change later. Members can't remove each other. Every rules change adds emulator tests in `test/firestore.rules.test.js`.
 
+**No ID numbers in EVIE.** Final. 2026-09-28.
+- **Why:** There are no passwords, so anyone in the circle, or holding one of its phones, can read everything.
+- **How it works:** `src/lib/privacy.js` refuses text that looks like a Social Security, Medicaid, Medicare or insurance number in the care plan, schedule, resources and quick-log notes. It skips seizure notes so saving a seizure is never blocked.
+- **Tradeoffs:** Pattern matching can't catch every format, and a phone number written without dashes next to "Medicaid" is refused, with a message saying to add dashes.
+
 **Video and photos stay on the phone that recorded them (IndexedDB).** Revisitable: optional shared storage if families ask for it. 2026-09-26.
 - **Why:** Privacy, and Cloud Storage needs the Blaze plan.
 - **Tradeoffs:** Only that phone can play the clip. **Share clip** sends it to a doctor.
@@ -50,6 +55,12 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 **A scheduled dose is a med entry with `slot: 'HH:MM'`.** Final. 2026-09-28.
 - **How it works:** A dose counts for a slot if it's the exact slot, or the same medication within 3 hours of it. This stops a quick-logged dose from being offered again.
 - **Tradeoffs:** A dose given after midnight counts toward the next day.
+
+**The caregiver schedule is the family's own plan, not a timesheet.** Final. 2026-09-28.
+- **Why:** Medicaid personal care services must be recorded in the state's electronic visit verification (EVV) system (42 U.S.C. § 1396b(l)), so EVIE must never look like a record of hours or pay.
+- **How it works:** A weekly schedule is stored on the circle (`schedule`), and the Schedule screen says this at the top. There's no clock-in, clock-out or hours total.
+
+**Emergency info is built from the care plan and shown three ways:** as a screen, printed, and as a sheet over the seizure timer. Final. 2026-09-28.
 
 **Handoff is an entry type (`handoff`). The newest one says who is with the person now.** Final. 2026-09-28.
 

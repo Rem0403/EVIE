@@ -8,6 +8,7 @@ import { validatePhoto } from '../lib/validate.js';
 import { addEntry } from '../data/entries.js';
 import { attachMedia } from '../data/clips.js';
 import Icon from '../components/Icon.jsx';
+import { findIdNumber, ID_NUMBER_MESSAGE } from '../lib/privacy.js';
 
 export default function QuickLog({ circle, me, type, entries, onDone }) {
   const [now] = useState(() => Date.now());
@@ -35,6 +36,7 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
   const [savedWithError, setSavedWithError] = useState('');
 
   function build() {
+    if (findIdNumber(note)) return [null, ID_NUMBER_MESSAGE];
     const base = { type, createdBy: me.uid, createdByName: me.name, note: note.trim() || undefined };
     if (type === 'sleep') {
       const bedtime = fromLocalInput(bed);

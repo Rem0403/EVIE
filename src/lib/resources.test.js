@@ -37,6 +37,8 @@ describe('cleanResource', () => {
     expect(cleanResource(form({ url: 'javascript:alert(1)' }))[1]).toBe('Enter a website like example.org.');
     expect(cleanResource(form({ email: 'nope' }))[1]).toBe('Enter an email like name@example.org.');
     expect(cleanResource(form({ nextDate: '2026-10-03' }))[1]).toBe('Say what the next step is, or clear the date.');
+    expect(cleanResource(form({ note: 'Our Medicaid ID is 12345678901' }))[1]).toMatch(/Social Security or Medicaid/);
+    expect(cleanResource(form({ note: 'Case worker Ms. Lee, 985-555-0142' }))[1]).toBeNull();
   });
 });
 

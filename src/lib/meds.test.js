@@ -53,7 +53,7 @@ describe('cleanMeds', () => {
     expect(cleanMeds([
       { name: ' Keppra ', dose: ' 250 mg ', times: ['20:00', '08:00', '20:00', ''] },
       { name: '', dose: '', times: [''] },
-    ])).toEqual([[{ name: 'Keppra', dose: '250 mg', times: ['08:00', '20:00'] }], null]);
+    ])).toEqual([[{ name: 'Keppra', dose: '250 mg', times: ['08:00', '20:00'], purpose: '', notes: '' }], null]);
   });
   it('asks for a name and at least one time', () => {
     expect(cleanMeds([{ name: '', dose: '5 mg', times: ['08:00'] }])[1]).toBe('Give each medication a name.');

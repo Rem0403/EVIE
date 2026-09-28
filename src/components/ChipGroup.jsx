@@ -10,6 +10,7 @@ export default function ChipGroup({ options, value, onChange, multi = false }) {
         <button
           type="button"
           key={key}
+          data-key={key}
           className={`chip${isOn(key) ? ' on' : ''}`}
           aria-pressed={isOn(key)}
           onClick={() => toggle(key)}

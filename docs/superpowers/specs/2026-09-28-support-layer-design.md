@@ -39,6 +39,7 @@ We decided to extend EVIE rather than pivot. EVIE stays the family's coordinatio
 | Supported decision-making as an alternative to guardianship | supporteddecisions.org |
 | ABLE: onset before 46; up to $100,000 excluded for SSI; no effect on Medicaid | ablenrc.org |
 | A P&A agency in every state and territory | ndrn.org |
+| Easterseals: a national affiliate network serving children and adults with disabilities, caregivers, veterans and families | easterseals.com (site description) |
 | State developmental disabilities agency directory | nasddds.org |
 
 Links to sites that block automated checks (ssa.gov, medicaid.gov, thearc.org, epilepsy.com) point to the home page.

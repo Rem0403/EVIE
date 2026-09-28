@@ -14,7 +14,7 @@ describe('entriesCsv', () => {
     const lines = csv.split('\r\n');
     expect(lines[0]).toBe('Date,Time,Type,Details,Logged by');
     expect(lines[1]).toBe('2026-09-20,07:00,Seizure,"Type: Focal; Duration: 1m 5s; Rescue med: No",Mom');
-    expect(lines[2]).toBe('2026-09-21,08:05,Med,"Medication: Keppra; Dose: 250mg; Status: Missed",Remy');
+    expect(lines[2]).toBe('2026-09-21,08:05,Medication,"Medication: Keppra; Dose: 250mg; Status: Missed",Remy');
   });
 
   it('escapes quotes and neutralises spreadsheet formulas in typed text', () => {

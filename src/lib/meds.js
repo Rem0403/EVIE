@@ -56,8 +56,14 @@ export function doseAdherence(entries) {
 // Care plan form rows → the stored schedule, or an error to show.
 export function cleanMeds(rows) {
   const meds = rows
-    .map((r) => ({ name: r.name.trim(), dose: r.dose.trim(), times: [...new Set(r.times.filter(Boolean))].sort() }))
-    .filter((r) => r.name || r.dose || r.times.length);
+    .map((r) => ({
+      name: r.name.trim(),
+      dose: r.dose.trim(),
+      times: [...new Set(r.times.filter(Boolean))].sort(),
+      purpose: (r.purpose || '').trim(),
+      notes: (r.notes || '').trim(),
+    }))
+    .filter((r) => r.name || r.dose || r.times.length || r.purpose || r.notes);
   const unnamed = meds.find((m) => !m.name);
   if (unnamed) return [null, 'Give each medication a name.'];
   const untimed = meds.find((m) => !m.times.length);

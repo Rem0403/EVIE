@@ -4,7 +4,7 @@ import Media from '../components/Media.jsx';
 import Icon from '../components/Icon.jsx';
 import { countByType, LONG_SEIZURE_SEC, summaryReport } from '../lib/summary.js';
 import { downloadBlob, downloadSummaryPdf, entriesCsv, fileDate } from '../lib/export.js';
-import { diagnosisText, formatDuration, formatTime, labelOf, SEIZURE_TYPES, TYPE_META } from '../lib/format.js';
+import { diagnosisText, formatDuration, formatTime, labelOf, SEIZURE_TYPES, SLEEP_QUALITY, TYPE_META } from '../lib/format.js';
 
 const RANGES = [[7, '7 days'], [30, '30 days'], [90, '90 days']];
 const shortDate = (ms) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -58,7 +58,7 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
         <div className="stat"><div className="stat-value">{stats.count}</div><div className="stat-label">Seizures</div></div>
         <div className="stat"><div className="stat-value">{formatDuration(stats.avgDurationSec)}</div><div className="stat-label">Average length</div></div>
         <div className="stat"><div className="stat-value">{formatDuration(stats.maxDurationSec)}</div><div className="stat-label">Longest</div></div>
-        <div className="stat"><div className="stat-value">{stats.rescueCount}</div><div className="stat-label">Rescue med uses</div></div>
+        <div className="stat"><div className="stat-value">{stats.rescueCount}</div><div className="stat-label">Rescue medication uses</div></div>
         <div className="stat"><div className="stat-value">{report.longCount}</div><div className="stat-label">5 min or longer</div></div>
         <div className="stat"><div className="stat-value">{report.clusters}</div><div className="stat-label">Clusters (2+ in 24h)</div></div>
         <div className="stat"><div className="stat-value">{report.sleepCount}</div><div className="stat-label">During sleep</div></div>
@@ -89,7 +89,7 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
       ) : <p className="muted">No behavior logged in this range.</p>}
 
       <h2>Day by day</h2>
-      <p className="muted small"><span className="type-seizure"><Icon name="seizure" size={15} /></span> seizures · <span className="type-med"><Icon name="med" size={15} /></span> missed doses · dot = sleep quality (red poor, yellow OK, green good, grey not logged)</p>
+      <p className="muted small"><span className="type-seizure"><Icon name="seizure" size={15} /></span> seizures · <span className="type-med"><Icon name="med" size={15} /></span> missed doses · sleep quality shown as Poor, OK or Good</p>
       <div className="strip">
         {strip.map((d) => (
           <div key={d.date} className="strip-row">
@@ -98,7 +98,10 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
               {d.seizures > 0 && <span className="with-icon type-seizure"><Icon name="seizure" size={15} />×{d.seizures}</span>}
               {d.missedMeds > 0 && <span className="with-icon type-med"><Icon name="med" size={15} />missed ×{d.missedMeds}</span>}
             </span>
-            <span className={`dot${d.sleepQuality ? ` q${d.sleepQuality}` : ''}`} />
+            <span className="sleep-q">
+              <span className={`dot${d.sleepQuality ? ` q${d.sleepQuality}` : ''}`} aria-hidden="true" />
+              <span className="small muted">{d.sleepQuality ? labelOf(SLEEP_QUALITY, d.sleepQuality) : 'No sleep log'}</span>
+            </span>
           </div>
         ))}
       </div>

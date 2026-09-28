@@ -1,16 +1,20 @@
 import { dueFollowUps } from '../lib/resources.js';
+import Icon from './Icon.jsx';
 
 // Resource next steps due today or overdue, so waitlist calls and applications don't slip.
 export default function FollowUps({ resources, now = Date.now(), onOpen }) {
   const due = dueFollowUps(resources, now);
   if (!due.length) return null;
   return (
-    <section className="card follow-ups" aria-labelledby="follow-ups-title">
-      <h2 id="follow-ups-title" className="today-title">Follow up</h2>
+    <section className="summary-card block-lime tabbed" aria-labelledby="follow-ups-title">
+      <span className="tab" aria-hidden="true">Due</span>
+      <span className="card-head">
+        <span className="card-label" id="follow-ups-title"><Icon name="flag" size={18} />Follow up</span>
+      </span>
       {due.map((r) => (
-        <button key={r.id} className="follow-up" onClick={() => onOpen(r.id)}>
-          <span>{r.nextStep}</span>
-          <span className="muted small">{r.name}</span>
+        <button key={r.id} className="list-row follow-up" onClick={() => onOpen(r.id)}>
+          <span>{r.nextStep}<span className="list-sub">{r.name}</span></span>
+          <Icon name="chevron" size={18} />
         </button>
       ))}
     </section>

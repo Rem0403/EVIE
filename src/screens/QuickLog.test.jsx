@@ -48,3 +48,11 @@ it('asks nothing more for a good day', () => {
   fireEvent.click(screen.getByText('Save'));
   expect(addEntry.mock.lastCall[1]).not.toHaveProperty('before');
 });
+
+it('refuses a note containing an ID number', () => {
+  render(<QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="note" entries={[]} onDone={vi.fn()} />);
+  fireEvent.change(document.querySelector('textarea'), { target: { value: 'SSN 123-45-6789 for the form' } });
+  fireEvent.click(screen.getByText('Save'));
+  expect(screen.getByText(/Social Security or Medicaid/)).toBeTruthy();
+  expect(addEntry).not.toHaveBeenCalled();
+});

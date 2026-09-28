@@ -39,6 +39,13 @@ export const GUIDE = [
         category: 'parent',
       },
       {
+        id: 'easterseals',
+        name: 'Easterseals',
+        text: 'A national network of local affiliates providing services to children and adults with disabilities, caregivers, veterans and their families.',
+        url: 'https://www.easterseals.com/',
+        category: 'services',
+      },
+      {
         id: 'call_211',
         name: 'Call or text 211',
         text: 'Connects you with local services, including caregiver resources and mental health support. More than 200 local 211 agencies cover the US.',

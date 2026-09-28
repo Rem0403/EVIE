@@ -8,14 +8,26 @@ import { startOfDay, toLocalInput } from './format.js';
 //    (3 of 4, not 2, so it stays at or above 50% after a seizure is logged live on stage)
 // Doses are logged against the demo care plan's 8 AM / 8 PM schedule.
 export const DEMO_CARE_PLAN = {
-  meds: [{ name: 'Keppra', dose: '500 mg', times: ['08:00', '20:00'] }],
+  meds: [{ name: 'Keppra', dose: '500 mg', times: ['08:00', '20:00'], purpose: 'seizures', notes: 'Give with food' }],
   profile: {
     diagnoses: ['epilepsy', 'autism'],
     diagnosisOther: '',
     communication: 'some_words',
     helps: 'Headphones, dim lights, her weighted blanket',
     avoid: 'Loud places, being touched without warning',
+    allergies: 'Penicillin',
+    rescuePlan: 'If a seizure lasts 5 minutes: give her rescue medication as prescribed and call 911.',
+    routine: 'School 8 to 3. Snack at 3:30. Bath before bed, asleep by 8:30.',
+    contacts: [
+      { name: 'Mom', role: 'family', phone: '555-0101' },
+      { name: 'Dr. Rivera (neurology)', role: 'neurologist', phone: '555-0110' },
+      { name: 'Ms. Brooks (case worker)', role: 'caseworker', phone: '555-0142' },
+    ],
   },
+  schedule: [
+    { name: 'Ms. Lee (caregiver)', days: [1, 2, 3, 4, 5], start: '15:00', end: '19:00', note: 'After-school care' },
+    { name: 'Dad', days: [0, 6], start: '08:00', end: '14:00', note: '' },
+  ],
 };
 
 // Sample resources with made-up names and 555 numbers; one follow-up is due today.

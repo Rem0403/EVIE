@@ -10,11 +10,13 @@ Care information ends up scattered across group texts, paper notes and a camera 
 
 ## What EVIE does
 
-- **One-tap seizure timer.** Tap **Seizure** and the timer starts at once, because in the moment you have one hand free. Afterwards, add the type, the possible triggers, whether rescue medication was given, notes and a video clip. If the page reloads mid-seizure, the timer keeps its time.
+- **One-tap seizure timer.** Tap **Start seizure** and the timer starts at once, because in the moment you have one hand free. Afterwards, add the type, the possible triggers, whether rescue medication was given, notes and a video clip. If the page reloads mid-seizure, the timer keeps its time.
 - **A 5-minute alert.** At 5 minutes the timer turns red, the phone vibrates and a reminder to follow the seizure plan appears. The screen stays on while the timer runs.
 - **Guided seizure details.** After the timer stops, four short steps ask what it looked like, whether rescue medication was given, possible triggers, and how they are now. Every step can be skipped and Save is always on screen. Each seizure type has a one-line description, and an **i** button opens a fuller guide to seizure types, recovery and first aid, adapted from Wikipedia.
 - **Quick logs.** Medication (given, missed or rescue), sleep, behavior and notes each take a few taps, with big buttons designed for stressful moments.
-- **Care plan.** An "About" page for the person: diagnoses (the conditions most often seen alongside epilepsy and autism are listed first), how they communicate, what helps them, what to avoid, and the daily medication schedule. Everyone in the circle sees it, and the diagnoses print on the doctor summary.
+- **Care plan.** An "About" page for the person: their seizure plan, allergies, emergency contacts, diagnoses (the conditions most often seen alongside epilepsy and autism are listed first), how they communicate, what helps them, what to avoid, their daily routine, and the daily medications with what each is for. Everyone in the circle sees it, and the diagnoses print on the doctor summary.
+- **Emergency info.** One tap from the timeline, and from the seizure timer without stopping it: Call 911, their seizure plan, contacts with tap-to-call, allergies, diagnoses, how to communicate with them, and their medications. It works offline and can be printed for the fridge.
+- **Caregiver schedule.** A weekly schedule of who is with them when (paid caregivers, family, respite), including overnight shifts. The handoff banner shows who is scheduled now. It's the family's own plan, not a timesheet: the app says that Medicaid-paid personal care has to be recorded in the state's electronic visit verification (EVV) system.
 - **Today's meds.** Each scheduled dose appears on the timeline with **Given** and **Missed** buttons. Once a dose is logged, everyone sees who gave it and when, so caregivers don't double-dose or both skip it.
 - **Handoff.** A banner shows who is with the person now and until when. **Take over** shows what happened since the last handoff (seizures, doses, meltdowns) and lets you leave a note for everyone.
 - **Behavior logs built for autism.** Log a meltdown, shutdown, self-injury, anxious time or good day, and optionally what happened before (sensory, change of routine, hunger, tiredness, pain…), what helped, how long it lasted and how intense it was.
@@ -47,7 +49,7 @@ Care information ends up scattered across group texts, paper notes and a camera 
 | Backend | Firebase (anonymous Authentication and Cloud Firestore with an offline cache), on the free Spark plan |
 | Media | IndexedDB, so clips and photos stay on the device |
 | PDF | jsPDF, loaded only when a PDF is downloaded |
-| Tests | Vitest and Testing Library (169 tests), plus 22 security-rules tests on the Firestore emulator |
+| Tests | Vitest and Testing Library (205 tests), plus 23 security-rules tests on the Firestore emulator |
 | Deployment | Docker (nginx) or Firebase Hosting |
 
 ## Getting started
@@ -114,16 +116,17 @@ This gives an HTTPS link that works on any phone and network.
 ```
 src/
   App.jsx          screen routing and the sign-in and circle session
-  screens/         Welcome, Timeline, LogSeizure, QuickLog, EntryDetail, Summary, CarePlan, Support, ResourceForm
-  components/      EntryCard, BottomBar, ChipGroup, Media, SeizureInfo, TodayMeds, Handoff, FollowUps, Icon, OfflineBanner, ErrorBoundary
+  screens/         Welcome, Timeline, LogSeizure, QuickLog, EntryDetail, Summary, CarePlan, Emergency, Schedule, Support, ResourceForm
+  components/      EntryCard, BottomBar, ChipGroup, Media, SeizureInfo, EmergencyInfo, TodayMeds, Handoff, FollowUps, Icon, OfflineBanner, ErrorBoundary
   data/            Firestore access (circles, entries, resources) and on-device media
-  lib/             pure logic: formatting, summary and patterns, medication schedule, handoff, resources and support guide, exports (CSV and PDF), seizure guide, validation, demo data
+  lib/             pure logic: formatting, summary and patterns, medication schedule, care plan, caregiver schedule, handoff, ID-number guard, resources and support guide, exports (CSV and PDF), seizure guide, validation, demo data
   styles.css       design tokens (light and dark) and all styles
 public/            web app manifest, icon and offline service worker
 test/              security-rules tests (run with npm run test:rules)
 firestore.rules    security rules: only circle members can read a circle or its entries
 DEMO.md            5-minute demo script, pre-stage checklist and smoke test
 docs/DECISIONS.md  settled technical and product decisions, and why
+docs/brand-guidelines.md  voice, messaging and visual identity
 .github/workflows/ unit tests, build and rules tests on every push (GitHub Actions)
 ```
 
@@ -132,6 +135,7 @@ docs/DECISIONS.md  settled technical and product decisions, and why
 - Only members of a circle can read the circle or its entries. Circles can't be listed or searched (see `firestore.rules`).
 - Join codes have 8 random characters (about 850 billion possibilities), so they can't be guessed. A code can only be looked up by its exact value, and joining is refused unless it matches the circle's current code.
 - Saved resources are private to the circle, and their links can only be ordinary web addresses.
+- EVIE refuses to save text that looks like a Social Security, Medicaid, Medicare or insurance number, because everyone in the circle can read it. Names and phone numbers of case workers are fine.
 - Members can edit the care plan and medication schedule, but can't remove other members. Each entry records who logged it, that can't be changed later, and only that person can delete it.
 - Circles created before the longer codes get a new code the first time a member opens the app. The old 4-digit code then stops working for new joins.
 - Videos and photos never leave the phone they were added on.

@@ -8,6 +8,7 @@ import { attachMedia } from '../data/clips.js';
 import { LONG_SEIZURE_SEC } from '../lib/summary.js';
 import Icon from '../components/Icon.jsx';
 import SeizureInfo from '../components/SeizureInfo.jsx';
+import EmergencyInfo from '../components/EmergencyInfo.jsx';
 import { SEIZURE_INFO } from '../lib/seizureInfo.js';
 
 const STEPS = 4;
@@ -22,6 +23,7 @@ export default function LogSeizure({ circle, me, onDone }) {
   // Details after Stop are asked one step at a time; null means not answered yet.
   const [step, setStep] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
   const stepHeading = useRef(null);
   const [seizureType, setSeizureType] = useState(null);
   const [rescue, setRescue] = useState(null);
@@ -143,7 +145,20 @@ export default function LogSeizure({ circle, me, onDone }) {
           <button className="btn small" onClick={() => adjust(30)}>+30s</button>
           <button className="btn small" onClick={() => adjust(60)}>+1m</button>
         </div>
+        <button className="btn" onClick={() => setShowEmergency(true)}>Emergency info</button>
         <button className="btn ghost" onClick={cancel}>Cancel</button>
+        {showEmergency && (
+          <div className="sheet-backdrop" onClick={() => setShowEmergency(false)}>
+            <div className="sheet panel" role="dialog" aria-modal="true" aria-label="Emergency info" onClick={(e) => e.stopPropagation()}>
+              <div className="spread">
+                <h2>Emergency info</h2>
+                <button className="btn small" onClick={() => setShowEmergency(false)}>Close</button>
+              </div>
+              <p className="muted small">The timer keeps running.</p>
+              <EmergencyInfo circle={circle} />
+            </div>
+          </div>
+        )}
       </section>
     );
   }

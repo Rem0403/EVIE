@@ -17,7 +17,7 @@ describe('shareJoinCode', () => {
 });
 
 describe('shareMessage', () => {
-  it('confirms a copy', () => expect(shareMessage('copied', circle)).toBe('Invite copied!'));
+  it('confirms a copy', () => expect(shareMessage('copied', circle)).toBe('Invite copied.'));
   it('tells the user the code when sharing fails', () => {
     expect(shareMessage('failed', circle)).toBe("Couldn't share. Give them the code EVIE-1234.");
   });

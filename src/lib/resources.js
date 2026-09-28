@@ -1,4 +1,5 @@
 import { toLocalInput } from './format.js';
+import { findIdNumber, ID_NUMBER_MESSAGE } from './privacy.js';
 
 // The family's own list of programs, services and groups, with where they are with each one.
 export const RESOURCE_CATEGORIES = [
@@ -59,6 +60,7 @@ export function cleanResource(f) {
   if (r.url === null) return [null, 'Enter a website like example.org.'];
   if (r.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) return [null, 'Enter an email like name@example.org.'];
   if (r.nextDate && !r.nextStep) return [null, 'Say what the next step is, or clear the date.'];
+  if (findIdNumber([r.name, r.nextStep, r.note].join('\n'))) return [null, ID_NUMBER_MESSAGE];
   return [r, null];
 }
 

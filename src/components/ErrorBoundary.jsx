@@ -15,7 +15,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.error) return this.props.children;
     return (
       <div className="center">
-        <p>Something went wrong.</p>
+        <p>Something went wrong. Reload to try again.</p>
         <button className="btn primary" onClick={() => location.reload()}>Reload</button>
       </div>
     );

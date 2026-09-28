@@ -79,6 +79,11 @@ describe('circle changes', () => {
       meds: [{ name: 'Keppra', dose: '250 mg', times: ['08:00', '20:00'] }],
     }));
   });
+  it('lets a member edit the caregiver schedule', async () => {
+    await assertSucceeds(updateDoc(doc(as('bob'), 'circles/c1'), {
+      schedule: [{ name: 'Ms. Lee', days: [1, 3], start: '08:00', end: '15:00', note: '' }],
+    }));
+  });
   it("stops a stranger editing the care plan", async () => {
     await assertFails(updateDoc(doc(as('eve'), 'circles/c1'), { meds: [] }));
   });

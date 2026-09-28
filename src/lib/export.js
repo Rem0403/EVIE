@@ -79,7 +79,7 @@ export function buildSummaryPdf(JsPDF, circle, r) {
   text(`${shortDate(r.start)} – ${shortDate(r.end)} · generated ${shortDate(r.end)} ${formatTime(r.end)} · from EVIE shared log`, { gap: 10 });
 
   text(`Seizures: ${stats.count}    Average length: ${formatDuration(stats.avgDurationSec)}    Longest: ${formatDuration(stats.maxDurationSec)}`);
-  text(`Rescue med uses: ${stats.rescueCount}    5 min or longer: ${r.longCount}    Clusters (2+ in 24h): ${r.clusters}`);
+  text(`Rescue medication uses: ${stats.rescueCount}    5 min or longer: ${r.longCount}    Clusters (2+ in 24h): ${r.clusters}`);
   text(`During sleep: ${r.sleepCount}    Scheduled doses given: ${r.doseText}`);
   text(`${r.compareText} · ${r.seizureFreeText}`);
   if (r.typeText) text(`Types: ${r.typeText}`);

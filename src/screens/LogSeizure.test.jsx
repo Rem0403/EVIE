@@ -132,3 +132,11 @@ it('records a seizure that happened during sleep', () => {
   fireEvent.click(screen.getByText('Save seizure'));
   expect(addEntry.mock.lastCall[1].duringSleep).toBe(true);
 });
+
+it('opens emergency info over the timer without stopping it', () => {
+  render(<LogSeizure {...{ ...props(), circle: { id: 'c1', profile: { allergies: 'Penicillin' } } }} />);
+  fireEvent.click(screen.getByText('Emergency info'));
+  expect(screen.getByRole('dialog', { name: 'Emergency info' }).textContent).toMatch(/Penicillin/);
+  act(() => vi.advanceTimersByTime(3_000));
+  expect(screen.getByText('00:03')).toBeTruthy();
+});

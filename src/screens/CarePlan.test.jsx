@@ -27,8 +27,11 @@ it('saves diagnoses, communication, notes and the medication schedule', () => {
   fireEvent.click(screen.getByText('Save'));
 
   expect(updateCircle).toHaveBeenCalledWith('c1', {
-    profile: { diagnoses: ['epilepsy', 'autism'], diagnosisOther: '', communication: 'non_speaking', helps: 'Headphones', avoid: '' },
-    meds: [{ name: 'Keppra', dose: '250 mg', times: ['08:00', '20:00'] }],
+    profile: {
+      diagnoses: ['epilepsy', 'autism'], diagnosisOther: '', communication: 'non_speaking', helps: 'Headphones', avoid: '',
+      allergies: '', rescuePlan: '', routine: '', contacts: [],
+    },
+    meds: [{ name: 'Keppra', dose: '250 mg', times: ['08:00', '20:00'], purpose: '', notes: '' }],
   });
   expect(onDone).toHaveBeenCalled();
 });
@@ -64,4 +67,25 @@ it('starts from the saved plan', () => {
   render(<CarePlan circle={{ ...circle, profile: { diagnoses: ['adhd'] }, meds: [{ name: 'Melatonin', dose: '', times: ['19:30'] }] }} onDone={vi.fn()} />);
   expect(screen.getByText('ADHD').getAttribute('aria-pressed')).toBe('true');
   expect(screen.getByLabelText('Medication').value).toBe('Melatonin');
+});
+
+it('saves emergency contacts and details', () => {
+  render(<CarePlan circle={circle} onDone={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Allergies (optional)'), { target: { value: 'Penicillin' } });
+  fireEvent.click(screen.getByText('+ Add contact'));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Dr. Patel' } });
+  fireEvent.click(screen.getByText('Neurologist'));
+  fireEvent.change(screen.getByLabelText('Phone'), { target: { value: '985-555-0110' } });
+  fireEvent.click(screen.getByText('Save'));
+  expect(updateCircle.mock.calls[0][1].profile).toMatchObject({
+    allergies: 'Penicillin', contacts: [{ name: 'Dr. Patel', role: 'neurologist', phone: '985-555-0110' }],
+  });
+});
+
+it('refuses to save an ID number, and says why', () => {
+  render(<CarePlan circle={circle} onDone={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Daily routine (optional)'), { target: { value: 'Medicaid ID 12345678901' } });
+  fireEvent.click(screen.getByText('Save'));
+  expect(screen.getByText(/Please don’t save ID numbers like Social Security or Medicaid numbers/)).toBeTruthy();
+  expect(updateCircle).not.toHaveBeenCalled();
 });

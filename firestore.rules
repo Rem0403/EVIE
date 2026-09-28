@@ -24,10 +24,10 @@ service cloud.firestore {
       allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
       allow create: if signedIn() && request.resource.data.memberIds == [request.auth.uid];
       allow update: if signedIn() && (
-        // Members may edit the care plan, rename or replace the code, but not change who is in the circle.
+        // Members may edit the care plan and schedule, rename or replace the code, but not change who is in the circle.
         (
           request.auth.uid in resource.data.memberIds
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile', 'schedule'])
         )
         || (
           // Joining: add only yourself, proving you know the current code through the

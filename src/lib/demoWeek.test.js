@@ -51,3 +51,15 @@ describe('demoResources', () => {
     expect(dueFollowUps(list.map((r, i) => ({ ...r, id: String(i) })), now).map((r) => r.name)).toEqual(['Medicaid waiver programs']);
   });
 });
+
+describe('DEMO_CARE_PLAN', () => {
+  it('passes the same checks as a real care plan and schedule', async () => {
+    const { cleanContacts, planIdError } = await import('./careplan.js');
+    const { cleanSchedule } = await import('./schedule.js');
+    const { cleanMeds } = await import('./meds.js');
+    expect(cleanContacts(DEMO_CARE_PLAN.profile.contacts)[1]).toBeNull();
+    expect(cleanSchedule(DEMO_CARE_PLAN.schedule)[1]).toBeNull();
+    expect(cleanMeds(DEMO_CARE_PLAN.meds)[1]).toBeNull();
+    expect(planIdError(DEMO_CARE_PLAN.profile, DEMO_CARE_PLAN.meds, DEMO_CARE_PLAN.profile.contacts)).toBeNull();
+  });
+});

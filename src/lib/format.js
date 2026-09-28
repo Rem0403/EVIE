@@ -105,7 +105,7 @@ export function diagnosisText(profile) {
 }
 export const TYPE_META = {
   seizure: { label: 'Seizure' },
-  med: { label: 'Med' },
+  med: { label: 'Medication' },
   sleep: { label: 'Sleep' },
   behavior: { label: 'Behavior' },
   note: { label: 'Note' },

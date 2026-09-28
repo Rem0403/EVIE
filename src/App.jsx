@@ -13,6 +13,8 @@ import QuickLog from './screens/QuickLog.jsx';
 import EntryDetail from './screens/EntryDetail.jsx';
 import Summary from './screens/Summary.jsx';
 import CarePlan from './screens/CarePlan.jsx';
+import Emergency from './screens/Emergency.jsx';
+import Schedule from './screens/Schedule.jsx';
 import Support from './screens/Support.jsx';
 import ResourceForm from './screens/ResourceForm.jsx';
 
@@ -152,6 +154,12 @@ export default function App() {
           : <ResourceForm circle={circle} me={me} resource={resource} prefill={screen.prefill} onDone={back} />;
         break;
       }
+      case 'schedule':
+        body = <Schedule circle={circle} onBack={home} />;
+        break;
+      case 'emergency':
+        body = <Emergency circle={circle} onBack={home} onEditPlan={() => go({ name: 'careplan' })} />;
+        break;
       case 'careplan':
         body = <CarePlan circle={circle} onDone={home} />;
         break;
@@ -182,6 +190,8 @@ export default function App() {
             onSummary={() => go({ name: 'summary' })}
             onCarePlan={() => go({ name: 'careplan' })}
             onSupport={() => go({ name: 'support' })}
+            onEmergency={() => go({ name: 'emergency' })}
+            onSchedule={() => go({ name: 'schedule' })}
             onOpenResource={(id) => go({ name: 'resource', id })}
             onLeave={leaveCircle}
           />
@@ -192,7 +202,7 @@ export default function App() {
   return (
     <>
       <OfflineBanner />
-      <main className="app">{body}</main>
+      <main className={`app${screen.name === 'timeline' && circle ? ' app-home' : ''}`}>{body}</main>
     </>
   );
 }

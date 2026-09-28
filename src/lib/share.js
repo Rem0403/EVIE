@@ -5,7 +5,7 @@ export async function shareJoinCode(circle) {
       await navigator.share({ title: 'Join my EVIE care circle', text, url: location.origin });
       return 'shared';
     }
-    await navigator.clipboard.writeText(`${text} — ${location.origin}`);
+    await navigator.clipboard.writeText(`${text}: ${location.origin}`);
     return 'copied';
   } catch (err) {
     return err?.name === 'AbortError' ? 'cancelled' : 'failed';
@@ -13,7 +13,7 @@ export async function shareJoinCode(circle) {
 }
 
 export function shareMessage(result, circle) {
-  if (result === 'copied') return 'Invite copied!';
+  if (result === 'copied') return 'Invite copied.';
   if (result === 'failed') return `Couldn't share. Give them the code ${circle.joinCode}.`;
   return '';
 }

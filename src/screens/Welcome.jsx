@@ -124,7 +124,7 @@ export default function Welcome({ uid, onJoined }) {
   return (
     <section className="stack welcome">
       <div className="brand">EVIE</div>
-      <p className="lead">One shared care timeline for the whole family. Seizures, meds, sleep and moments, all in one place.</p>
+      <p className="lead">One shared record for everyone who cares for them: seizures, medications, behavior, who’s with them, and where to find support.</p>
       <button className="btn primary big" onClick={() => setMode('create')}>Start a care circle</button>
       <button className="btn big" onClick={() => setMode('join')}>Join with a code</button>
     </section>

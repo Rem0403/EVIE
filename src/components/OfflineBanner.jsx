@@ -13,5 +13,5 @@ export default function OfflineBanner() {
     };
   }, []);
   if (online) return null;
-  return <div className="offline-banner no-print">Offline — changes will sync when you reconnect</div>;
+  return <div className="offline-banner no-print">You’re offline. Changes will sync when you reconnect.</div>;
 }
