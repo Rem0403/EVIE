@@ -112,6 +112,26 @@ describe('circle changes', () => {
   });
 });
 
+describe('resources', () => {
+  const res = { name: 'Waiver office', category: 'services', status: 'want', createdBy: 'alice' };
+  it('can be added, edited and removed by any member', async () => {
+    await assertSucceeds(setDoc(doc(as('alice'), 'circles/c1/resources/r1'), res));
+    await assertSucceeds(updateDoc(doc(as('bob'), 'circles/c1/resources/r1'), { status: 'waitlisted' }));
+    await assertSucceeds(deleteDoc(doc(as('bob'), 'circles/c1/resources/r1')));
+  });
+  it('are private to the circle', async () => {
+    await assertSucceeds(setDoc(doc(as('alice'), 'circles/c1/resources/r1'), res));
+    await assertFails(getDoc(doc(as('eve'), 'circles/c1/resources/r1')));
+    await assertFails(getDocs(collection(as('eve'), 'circles/c1/resources')));
+    await assertFails(setDoc(doc(as('eve'), 'circles/c1/resources/r2'), { ...res, createdBy: 'eve' }));
+  });
+  it("can't be signed as someone else, or re-signed later", async () => {
+    await assertFails(setDoc(doc(as('bob'), 'circles/c1/resources/r1'), res));
+    await assertSucceeds(setDoc(doc(as('alice'), 'circles/c1/resources/r1'), res));
+    await assertFails(updateDoc(doc(as('bob'), 'circles/c1/resources/r1'), { createdBy: 'bob' }));
+  });
+});
+
 describe('entries', () => {
   it('must be signed by the person logging them', async () => {
     await assertSucceeds(setDoc(doc(as('bob'), 'circles/c1/entries/e2'), { type: 'note', createdBy: 'bob' }));

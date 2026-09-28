@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 
 vi.mock('../data/entries.js', () => ({ addEntriesBatch: vi.fn(), addEntry: vi.fn() }));
 vi.mock('../data/circles.js', () => ({ updateCircle: vi.fn() }));
+vi.mock('../data/resources.js', () => ({ addResource: vi.fn() }));
 
 import Timeline from './Timeline.jsx';
 

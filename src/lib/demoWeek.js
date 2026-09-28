@@ -1,10 +1,11 @@
-import { startOfDay } from './format.js';
+import { startOfDay, toLocalInput } from './format.js';
 
 // Ten days of realistic entries. Designed so that:
 //  - 3 of 4 seizures follow poor sleep   → poor_sleep callout
 //  - 3 of 4 seizures are in the morning  → time_of_day callout
 //  - 1 of 4 follows a missed dose        → missed_med stays hidden (borderline)
-//  - 2 of 4 have a meltdown or shutdown in the 24h before → behavior_before callout
+//  - 3 of 4 have a meltdown or shutdown in the 24h before → behavior_before callout
+//    (3 of 4, not 2, so it stays at or above 50% after a seizure is logged live on stage)
 // Doses are logged against the demo care plan's 8 AM / 8 PM schedule.
 export const DEMO_CARE_PLAN = {
   meds: [{ name: 'Keppra', dose: '500 mg', times: ['08:00', '20:00'] }],
@@ -16,6 +17,34 @@ export const DEMO_CARE_PLAN = {
     avoid: 'Loud places, being touched without warning',
   },
 };
+
+// Sample resources with made-up names and 555 numbers; one follow-up is due today.
+export function demoResources(now, me) {
+  const day = (offset) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + offset);
+    return toLocalInput(d.getTime()).slice(0, 10);
+  };
+  const who = me.name || 'Remy';
+  const base = {
+    phone: '', url: '', email: '', nextStep: '', nextDate: '', note: '',
+    createdBy: me.uid, createdByName: who, updatedAt: now, updatedByName: who,
+  };
+  return [
+    {
+      ...base, name: 'Medicaid waiver programs', category: 'services', status: 'waitlisted', phone: '555-0142',
+      nextStep: 'Call to check our place on the waiting list', nextDate: day(0), note: 'Applied in March. Ask for the support coordinator.',
+    },
+    {
+      ...base, name: 'Friday social club', category: 'community', status: 'using',
+      note: 'Meets Fridays 4 to 6 PM at the library. She loves the art table.',
+    },
+    {
+      ...base, name: 'Parent Training and Information Center', category: 'parent', status: 'want',
+      url: 'https://www.parentcenterhub.org/find-your-center/', nextStep: 'Ask for help preparing for the IEP meeting', nextDate: day(5),
+    },
+  ];
+}
 
 export function buildDemoWeek(now, me) {
   const base = startOfDay(now);
@@ -53,6 +82,7 @@ export function buildDemoWeek(now, me) {
   add({ type: 'seizure', occurredAt: at(1, 6, 50), durationSec: 138, seizureType: 'tonic-clonic', triggers: ['poor_sleep', 'missed_med'], rescueMedGiven: true, clipStatus: 'none', note: 'Over 2 min, gave rescue med.' });
   add({ type: 'med', occurredAt: at(1, 6, 53), medName: 'Diastat', dose: '10 mg', status: 'rescue' });
 
+  add({ type: 'behavior', occurredAt: at(9, 17, 0), kind: 'meltdown', before: ['sensory', 'routine'], helped: ['quiet'], length: '15to30', intensity: 'moderate', note: 'New substitute teacher, noisy classroom.' });
   add({ type: 'behavior', occurredAt: at(7, 16, 0), kind: 'meltdown', before: ['sensory'], helped: ['removed', 'comfort'], length: '5to15', intensity: 'moderate', note: 'Fire drill at school, very loud. Calmed with headphones.' });
   add({ type: 'behavior', occurredAt: at(6, 18, 0), kind: 'meltdown', before: ['tired', 'routine'], helped: ['quiet'], length: '15to30', intensity: 'severe', note: 'Dinner was late and she was exhausted.' });
   add({ type: 'behavior', occurredAt: at(4, 15, 0), kind: 'good_day', note: 'Great day at therapy.' });

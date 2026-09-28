@@ -45,6 +45,13 @@ service cloud.firestore {
         allow create, update: if uid == request.auth.uid && isMemberAfter(circleId);
       }
 
+      // The family's shared list of programs and groups: any member can add, edit or remove one.
+      match /resources/{resourceId} {
+        allow read, delete: if isMember(circleId);
+        allow create: if isMember(circleId) && request.resource.data.createdBy == request.auth.uid;
+        allow update: if isMember(circleId) && request.resource.data.createdBy == resource.data.createdBy;
+      }
+
       match /entries/{entryId} {
         allow read: if isMember(circleId);
         // Entries are signed by whoever logs them, and the author can't be changed later.

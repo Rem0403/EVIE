@@ -18,6 +18,7 @@ Care information ends up scattered across group texts, paper notes and a camera 
 - **Today's meds.** Each scheduled dose appears on the timeline with **Given** and **Missed** buttons. Once a dose is logged, everyone sees who gave it and when, so caregivers don't double-dose or both skip it.
 - **Handoff.** A banner shows who is with the person now and until when. **Take over** shows what happened since the last handoff (seizures, doses, meltdowns) and lets you leave a note for everyone.
 - **Behavior logs built for autism.** Log a meltdown, shutdown, self-injury, anxious time or good day, and optionally what happened before (sensory, change of routine, hunger, tiredness, pain…), what helped, how long it lasted and how intense it was.
+- **Support.** A shared list of the family's programs, services and groups: where things stand with each one, contact details, and a dated next step ("Call to check our place on the waiting list"). Follow-ups that are due show on the timeline. A **Start here** guide explains what to ask about at each stage (just diagnosed, school years, turning 18, friends and support), with links to official sources.
 - **A shared, live timeline.** Everyone in the family "care circle" sees new entries as they're logged, grouped by day and showing who logged what. It shows the last 200 days.
 - **A doctor summary.** Choose the last 7, 30 or 90 days to see:
   - seizure count, average length, longest seizure and rescue medication uses
@@ -46,7 +47,7 @@ Care information ends up scattered across group texts, paper notes and a camera 
 | Backend | Firebase (anonymous Authentication and Cloud Firestore with an offline cache), on the free Spark plan |
 | Media | IndexedDB, so clips and photos stay on the device |
 | PDF | jsPDF, loaded only when a PDF is downloaded |
-| Tests | Vitest and Testing Library (155 tests), plus 19 security-rules tests on the Firestore emulator |
+| Tests | Vitest and Testing Library (169 tests), plus 22 security-rules tests on the Firestore emulator |
 | Deployment | Docker (nginx) or Firebase Hosting |
 
 ## Getting started
@@ -113,21 +114,24 @@ This gives an HTTPS link that works on any phone and network.
 ```
 src/
   App.jsx          screen routing and the sign-in and circle session
-  screens/         Welcome, Timeline, LogSeizure, QuickLog, EntryDetail, Summary, CarePlan
-  components/      EntryCard, BottomBar, ChipGroup, Media, SeizureInfo, TodayMeds, Handoff, Icon, OfflineBanner, ErrorBoundary
-  data/            Firestore access (circles, entries) and on-device media
-  lib/             pure logic: formatting, summary and patterns, medication schedule, handoff, exports (CSV and PDF), seizure guide, validation, demo data
+  screens/         Welcome, Timeline, LogSeizure, QuickLog, EntryDetail, Summary, CarePlan, Support, ResourceForm
+  components/      EntryCard, BottomBar, ChipGroup, Media, SeizureInfo, TodayMeds, Handoff, FollowUps, Icon, OfflineBanner, ErrorBoundary
+  data/            Firestore access (circles, entries, resources) and on-device media
+  lib/             pure logic: formatting, summary and patterns, medication schedule, handoff, resources and support guide, exports (CSV and PDF), seizure guide, validation, demo data
   styles.css       design tokens (light and dark) and all styles
 public/            web app manifest, icon and offline service worker
 test/              security-rules tests (run with npm run test:rules)
 firestore.rules    security rules: only circle members can read a circle or its entries
-DEMO.md            4-minute demo script and pre-stage checklist
+DEMO.md            5-minute demo script, pre-stage checklist and smoke test
+docs/DECISIONS.md  settled technical and product decisions, and why
+.github/workflows/ unit tests, build and rules tests on every push (GitHub Actions)
 ```
 
 ## Privacy and security
 
 - Only members of a circle can read the circle or its entries. Circles can't be listed or searched (see `firestore.rules`).
 - Join codes have 8 random characters (about 850 billion possibilities), so they can't be guessed. A code can only be looked up by its exact value, and joining is refused unless it matches the circle's current code.
+- Saved resources are private to the circle, and their links can only be ordinary web addresses.
 - Members can edit the care plan and medication schedule, but can't remove other members. Each entry records who logged it, that can't be changed later, and only that person can delete it.
 - Circles created before the longer codes get a new code the first time a member opens the app. The old 4-digit code then stops working for new joins.
 - Videos and photos never leave the phone they were added on.

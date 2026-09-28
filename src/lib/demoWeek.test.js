@@ -38,3 +38,16 @@ describe('buildDemoWeek', () => {
     expect(times).toEqual([...times].sort((a, b) => b - a));
   });
 });
+
+describe('demoResources', () => {
+  it('uses made-up names, is signed by the presenter, and has one follow-up due today', async () => {
+    const { demoResources } = await import('./demoWeek.js');
+    const { cleanResource, dueFollowUps } = await import('./resources.js');
+    const list = demoResources(now, me);
+    for (const r of list) {
+      expect(r.createdBy).toBe('u1');
+      expect(cleanResource(r)[1]).toBeNull();
+    }
+    expect(dueFollowUps(list.map((r, i) => ({ ...r, id: String(i) })), now).map((r) => r.name)).toEqual(['Medicaid waiver programs']);
+  });
+});

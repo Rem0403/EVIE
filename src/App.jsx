@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ensureSignedIn } from './firebase.js';
 import { getCircle, subscribeCircle, upgradeJoinCode } from './data/circles.js';
 import { subscribeEntries } from './data/entries.js';
+import { subscribeResources } from './data/resources.js';
 import { clearSession, loadSession, saveSession } from './lib/session.js';
 import { loadSeizureDraft } from './lib/seizureDraft.js';
 import OfflineBanner from './components/OfflineBanner.jsx';
@@ -12,6 +13,8 @@ import QuickLog from './screens/QuickLog.jsx';
 import EntryDetail from './screens/EntryDetail.jsx';
 import Summary from './screens/Summary.jsx';
 import CarePlan from './screens/CarePlan.jsx';
+import Support from './screens/Support.jsx';
+import ResourceForm from './screens/ResourceForm.jsx';
 
 const DEMO = new URLSearchParams(location.search).has('demo');
 
@@ -22,6 +25,7 @@ export default function App() {
   const [name, setName] = useState('');
   const [entries, setEntries] = useState([]);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
+  const [resources, setResources] = useState([]);
   // Reopen an unsaved seizure after a reload so its timing isn't lost.
   const [screen, setScreen] = useState(() => (loadSeizureDraft() ? { name: 'seizure' } : { name: 'timeline' }));
 
@@ -62,6 +66,11 @@ export default function App() {
 
   useEffect(() => {
     if (!circle) return undefined;
+    return subscribeResources(circle.id, setResources, (err) => console.error('resources subscription', err));
+  }, [circle?.id]);
+
+  useEffect(() => {
+    if (!circle) return undefined;
     setEntriesLoaded(false);
     return subscribeEntries(
       circle.id,
@@ -88,6 +97,7 @@ export default function App() {
     clearSession();
     setCircle(null);
     setEntries([]);
+    setResources([]);
   }
 
   if (status === 'loading') return <div className="center muted">Loading…</div>;
@@ -123,6 +133,25 @@ export default function App() {
           : <div className="center"><p className="muted">This entry was deleted.</p><button className="btn" onClick={back}>Back</button></div>;
         break;
       }
+      case 'support':
+        body = (
+          <Support
+            circle={circle}
+            resources={resources}
+            onBack={home}
+            onAdd={(prefill) => go({ name: 'resource', prefill })}
+            onEdit={(id) => go({ name: 'resource', id })}
+          />
+        );
+        break;
+      case 'resource': {
+        const resource = screen.id ? resources.find((r) => r.id === screen.id) : null;
+        const back = () => go({ name: 'support' });
+        body = screen.id && !resource
+          ? <div className="center"><p className="muted">This resource was removed.</p><button className="btn" onClick={back}>Back</button></div>
+          : <ResourceForm circle={circle} me={me} resource={resource} prefill={screen.prefill} onDone={back} />;
+        break;
+      }
       case 'careplan':
         body = <CarePlan circle={circle} onDone={home} />;
         break;
@@ -144,6 +173,7 @@ export default function App() {
             circle={circle}
             me={me}
             entries={entries}
+            resources={resources}
             loading={!entriesLoaded}
             demo={DEMO}
             onOpen={(id) => go({ name: 'detail', id })}
@@ -151,6 +181,8 @@ export default function App() {
             onQuickLog={(type) => go({ name: 'quick', type })}
             onSummary={() => go({ name: 'summary' })}
             onCarePlan={() => go({ name: 'careplan' })}
+            onSupport={() => go({ name: 'support' })}
+            onOpenResource={(id) => go({ name: 'resource', id })}
             onLeave={leaveCircle}
           />
         );

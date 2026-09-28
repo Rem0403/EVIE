@@ -4,13 +4,15 @@ import EntryCard from '../components/EntryCard.jsx';
 import BottomBar from '../components/BottomBar.jsx';
 import TodayMeds from '../components/TodayMeds.jsx';
 import Handoff from '../components/Handoff.jsx';
+import FollowUps from '../components/FollowUps.jsx';
 import Icon from '../components/Icon.jsx';
 import { groupByDay } from '../lib/format.js';
 import { shareJoinCode, shareMessage } from '../lib/share.js';
 import { useFlash } from '../lib/useFlash.js';
-import { buildDemoWeek, DEMO_CARE_PLAN } from '../lib/demoWeek.js';
+import { buildDemoWeek, DEMO_CARE_PLAN, demoResources } from '../lib/demoWeek.js';
 import { addEntriesBatch } from '../data/entries.js';
 import { updateCircle } from '../data/circles.js';
+import { addResource } from '../data/resources.js';
 
 const FILTERS = [
   ['all', 'All'],
@@ -29,7 +31,8 @@ const QUICK_TYPES = [
 ];
 
 export default function Timeline({
-  circle, me, entries, loading = false, demo, onOpen, onLogSeizure, onQuickLog, onSummary, onCarePlan, onLeave,
+  circle, me, entries, resources = [], loading = false, demo,
+  onOpen, onLogSeizure, onQuickLog, onSummary, onCarePlan, onSupport, onOpenResource, onLeave,
 }) {
   const [filter, setFilter] = useState('all');
   const [chooser, setChooser] = useState(false);
@@ -57,6 +60,7 @@ export default function Timeline({
       await addEntriesBatch(circle.id, buildDemoWeek(Date.now(), me));
       // Only fill in a care plan nobody has written yet.
       if (!circle.meds?.length && !circle.profile) await updateCircle(circle.id, DEMO_CARE_PLAN);
+      if (!resources.length) for (const r of demoResources(Date.now(), me)) addResource(circle.id, r);
     } catch (err) {
       console.error(err);
       setToast("Couldn't load demo data.");
@@ -73,8 +77,9 @@ export default function Timeline({
           <button className="code-chip" onClick={share}>Code {circle.joinCode} · invite</button>
           {toast && <p className="muted small">{toast}</p>}
         </div>
-        <div className="row">
+        <div className="header-actions">
           <button className="btn small" onClick={onCarePlan}>Care plan</button>
+          <button className="btn small" onClick={onSupport}>Support</button>
           <button className="btn small" onClick={onSummary}>Summary</button>
         </div>
       </header>
@@ -83,6 +88,7 @@ export default function Timeline({
         <>
           <Handoff circle={circle} me={me} entries={entries} now={now} />
           <TodayMeds circle={circle} me={me} entries={entries} now={now} onSetUp={onCarePlan} />
+          <FollowUps resources={resources} now={now} onOpen={onOpenResource} />
         </>
       )}
 
