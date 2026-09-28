@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seizureStats, dayStrip, patterns, countByType } from './summary.js';
+import { seizureStats, dayStrip, patterns, countByType, triggerCounts, clusterCount, previousSeizureCount, summaryReport } from './summary.js';
 
 const at = (d, h = 0, m = 0) => new Date(2026, 8, d, h, m).getTime();
 const seizure = (occurredAt, extra = {}) => ({ type: 'seizure', occurredAt, durationSec: 60, seizureType: 'unknown', ...extra });
@@ -141,5 +141,98 @@ describe('countByType', () => {
       { type: 'med', occurredAt: at(21, 8), status: 'given' },
       { type: 'note', occurredAt: at(21, 9) },
     ])).toEqual([['seizure', 1], ['med', 2], ['sleep', 0], ['behavior', 0], ['note', 1]]);
+  });
+});
+
+describe('triggerCounts', () => {
+  it('counts triggers across seizures, most common first', () => {
+    expect(triggerCounts([
+      seizure(at(20, 7), { triggers: ['illness', 'poor_sleep'] }),
+      seizure(at(21, 7), { triggers: ['poor_sleep'] }),
+      seizure(at(22, 7)),
+    ])).toEqual([['poor_sleep', 2], ['illness', 1]]);
+  });
+});
+
+describe('clusterCount', () => {
+  it('counts runs of 2+ seizures each within 24h of the previous one', () => {
+    expect(clusterCount([
+      seizure(at(10, 7)), seizure(at(10, 20)), seizure(at(11, 18)), // one chained cluster
+      seizure(at(15, 7)), // alone
+      seizure(at(20, 7)), seizure(at(20, 9)), // second cluster
+    ])).toBe(2);
+  });
+  it('ignores order and single seizures', () => {
+    expect(clusterCount([seizure(at(12, 7)), seizure(at(10, 7))])).toBe(0);
+    expect(clusterCount([seizure(at(11, 7)), seizure(at(10, 8))])).toBe(1);
+    expect(clusterCount([])).toBe(0);
+  });
+});
+
+describe('previousSeizureCount', () => {
+  it('counts seizures in the equal-length window before start', () => {
+    const entries = [seizure(at(15, 7)), seizure(at(18, 7)), seizure(at(22, 7)), { type: 'note', occurredAt: at(1) }];
+    expect(previousSeizureCount(entries, at(20), 7)).toBe(2); // Sep 13–19
+  });
+  it('returns null when logging started inside the previous window', () => {
+    expect(previousSeizureCount([seizure(at(15, 7)), seizure(at(22, 7))], at(20), 7)).toBeNull();
+  });
+});
+
+describe('summaryReport', () => {
+  it('combines stats, long seizures, clusters, triggers and comparison for the range', () => {
+    const r = summaryReport([
+      seizure(at(26, 7), { durationSec: 320, triggers: ['illness'], seizureType: 'focal' }),
+      seizure(at(26, 20), { triggers: ['illness', 'poor_sleep'] }),
+      seizure(at(18, 7)),
+      { type: 'note', occurredAt: at(5) },
+    ], 7, at(27, 12));
+    expect(r.stats.count).toBe(2);
+    expect(r.longCount).toBe(1);
+    expect(r.clusters).toBe(1);
+    expect(r.typeText).toBe('Focal ×1, Unknown ×1');
+    expect(r.triggerText).toBe('Illness ×2, Poor sleep ×1');
+    expect(r.compareText).toBe('vs previous 7 days: 1 → 2 seizures');
+    expect(r.seizureFreeText).toBe('6 of 7 days seizure-free');
+    expect(r.strip[0].date).toBe(at(27)); // newest first
+  });
+});
+
+describe('behavior and seizure patterns', () => {
+  const beh = (occurredAt, kind = 'meltdown') => ({ type: 'behavior', occurredAt, kind });
+  it('shows when hard behaviors came in the 24h before most seizures', () => {
+    const found = patterns([
+      seizure(at(20, 9)), seizure(at(22, 9)), seizure(at(24, 9)),
+      beh(at(19, 18)), beh(at(21, 20), 'shutdown'), beh(at(24, 12), 'good_day'),
+    ]);
+    expect(found.find((p) => p.id === 'behavior_before')?.text)
+      .toBe('2 of 3 seizures had a meltdown, shutdown, self-injury or anxious time logged in the 24h before.');
+    expect(found.find((p) => p.id === 'behavior_after')).toBeUndefined();
+  });
+  it('shows hard behaviors in the 24h after seizures', () => {
+    const found = patterns([seizure(at(20, 9)), seizure(at(22, 9)), beh(at(20, 15), 'anxious'), beh(at(23, 8), 'self_injury')]);
+    expect(found.find((p) => p.id === 'behavior_after')?.matched).toBe(2);
+  });
+});
+
+describe('summaryReport, care details', () => {
+  it('counts sleep seizures, scheduled doses and behavior details', () => {
+    const r = summaryReport([
+      seizure(at(26, 3), { duringSleep: true }),
+      seizure(at(25, 9)),
+      { type: 'med', occurredAt: at(26, 8), medName: 'Keppra', status: 'given', slot: '08:00' },
+      { type: 'med', occurredAt: at(26, 20), medName: 'Keppra', status: 'missed', slot: '20:00' },
+      { type: 'behavior', occurredAt: at(24, 16), kind: 'meltdown', before: ['sensory', 'tired'], helped: ['quiet'] },
+      { type: 'behavior', occurredAt: at(25, 16), kind: 'meltdown', before: ['sensory'] },
+      { type: 'behavior', occurredAt: at(26, 16), kind: 'good_day', before: ['pain'] },
+    ], 7, at(27, 12));
+    expect(r.sleepCount).toBe(1);
+    expect(r.doseText).toBe('1/2');
+    expect(r.behaviorText).toBe('Meltdown ×2, Good day ×1');
+    expect(r.beforeText).toBe('Sensory (noise, light, crowds) ×2, Tired ×1'); // hard behaviors only
+    expect(r.helpedText).toBe('Quiet or dim space ×1');
+  });
+  it('shows a dash when no scheduled doses were logged', () => {
+    expect(summaryReport([], 7, at(27, 12)).doseText).toBe('—');
   });
 });

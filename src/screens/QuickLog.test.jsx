@@ -8,7 +8,10 @@ vi.mock('../data/clips.js', () => ({ attachMedia: vi.fn(() => Promise.reject(new
 import QuickLog from './QuickLog.jsx';
 import { addEntry } from '../data/entries.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 it('does not offer Save again after the note saved but its photo failed', async () => {
   render(<QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="note" entries={[]} onDone={vi.fn()} />);
@@ -21,4 +24,27 @@ it('does not offer Save again after the note saved but its photo failed', async 
   expect(await screen.findByText("Couldn't save the photo on this phone. The note is saved without it.")).toBeTruthy();
   expect(screen.queryByText('Save')).toBeNull();
   expect(addEntry).toHaveBeenCalledTimes(1);
+});
+
+it('logs a behavior with what came before, what helped, length and intensity', () => {
+  render(<QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="behavior" entries={[]} onDone={vi.fn()} />);
+  fireEvent.click(screen.getByText('Shutdown'));
+  fireEvent.click(screen.getByText('Sensory (noise, light, crowds)'));
+  fireEvent.click(screen.getByText('Pain or unwell'));
+  fireEvent.click(screen.getByText('Quiet or dim space'));
+  fireEvent.click(screen.getByText('5–15 min'));
+  fireEvent.click(screen.getByText('Severe'));
+  fireEvent.click(screen.getByText('Severe')); // tapping again clears it
+  fireEvent.click(screen.getByText('Save'));
+  expect(addEntry).toHaveBeenLastCalledWith('c1', expect.objectContaining({
+    type: 'behavior', kind: 'shutdown', before: ['sensory', 'pain'], helped: ['quiet'], length: '5to15', intensity: undefined,
+  }));
+});
+
+it('asks nothing more for a good day', () => {
+  render(<QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="behavior" entries={[]} onDone={vi.fn()} />);
+  fireEvent.click(screen.getByText('Good day'));
+  expect(screen.queryByText('What happened before? (optional)')).toBeNull();
+  fireEvent.click(screen.getByText('Save'));
+  expect(addEntry.mock.lastCall[1]).not.toHaveProperty('before');
 });

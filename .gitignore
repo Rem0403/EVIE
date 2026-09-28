@@ -34,3 +34,4 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+firestore-debug.log

@@ -34,6 +34,7 @@ const PATHS = {
     </>
   ),
   plus: <path d="M5 12h14M12 5v14" />,
+  handoff: <path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16" />,
 };
 
 export default function Icon({ name, size = 20, className = '' }) {

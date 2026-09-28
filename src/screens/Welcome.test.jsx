@@ -32,7 +32,7 @@ it('says offline rather than "No circle found" when joining without a connection
   goOffline();
   render(<Welcome uid="u1" onJoined={vi.fn()} />);
   fireEvent.click(screen.getByText('Join with a code'));
-  fireEvent.change(screen.getByPlaceholderText('EVIE-1234'), { target: { value: 'EVIE-1234' } });
+  fireEvent.change(screen.getByPlaceholderText('EVIE-7KQ4-M2XP'), { target: { value: 'EVIE-7KQ4-M2XP' } });
   fireEvent.change(screen.getByPlaceholderText('e.g. Mom'), { target: { value: 'Mom' } });
   fireEvent.click(screen.getByText('Join circle'));
   expect(screen.getByText(/You're offline/)).toBeTruthy();

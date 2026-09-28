@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -17,5 +18,9 @@ export default defineConfig({
       },
     },
   },
-  test: { environment: 'node' },
+  test: {
+    environment: 'node',
+    // Rules tests need the Firestore emulator, so they only run under `npm run test:rules`.
+    exclude: process.env.FIRESTORE_EMULATOR_HOST ? configDefaults.exclude : [...configDefaults.exclude, 'test/**'],
+  },
 });

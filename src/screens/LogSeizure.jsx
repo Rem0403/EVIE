@@ -5,7 +5,12 @@ import { validateClip } from '../lib/validate.js';
 import { clearSeizureDraft, loadSeizureDraft, saveSeizureDraft } from '../lib/seizureDraft.js';
 import { addEntry } from '../data/entries.js';
 import { attachMedia } from '../data/clips.js';
+import { LONG_SEIZURE_SEC } from '../lib/summary.js';
 import Icon from '../components/Icon.jsx';
+import SeizureInfo from '../components/SeizureInfo.jsx';
+import { SEIZURE_INFO } from '../lib/seizureInfo.js';
+
+const STEPS = 4;
 
 export default function LogSeizure({ circle, me, onDone }) {
   const [draft] = useState(loadSeizureDraft);
@@ -14,9 +19,14 @@ export default function LogSeizure({ circle, me, onDone }) {
   const [now, setNow] = useState(() => Date.now());
   const saving = useRef(false);
 
-  const [seizureType, setSeizureType] = useState('unknown');
-  const [rescue, setRescue] = useState(false);
+  // Details after Stop are asked one step at a time; null means not answered yet.
+  const [step, setStep] = useState(1);
+  const [showInfo, setShowInfo] = useState(false);
+  const stepHeading = useRef(null);
+  const [seizureType, setSeizureType] = useState(null);
+  const [rescue, setRescue] = useState(null);
   const [triggers, setTriggers] = useState([]);
+  const [duringSleep, setDuringSleep] = useState(false);
   const [note, setNote] = useState('');
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState('');
@@ -33,7 +43,37 @@ export default function LogSeizure({ circle, me, onDone }) {
     if (!saving.current) saveSeizureDraft({ startMs, stopMs });
   }, [startMs, stopMs]);
 
+  // Move focus to each step's question so screen readers announce it.
+  useEffect(() => {
+    stepHeading.current?.focus();
+  }, [step, stopMs]);
+
   const elapsed = elapsedSec(startMs, stopMs ?? now);
+  const overLimit = elapsed >= LONG_SEIZURE_SEC;
+
+  // Vibrate once, as the limit is crossed (not again after Stop or Resume).
+  useEffect(() => {
+    if (overLimit && !stopMs) navigator.vibrate?.([400, 200, 400]);
+  }, [overLimit]);
+
+  // Keep the screen on while timing; the browser drops the lock when the app is hidden, so take it again on return.
+  useEffect(() => {
+    if (stopMs || !navigator.wakeLock) return undefined;
+    let lock = null;
+    let live = true;
+    const acquire = () => navigator.wakeLock.request('screen').then((l) => {
+      if (live) lock = l;
+      else l.release();
+    }).catch(() => {});
+    const onVisible = () => document.visibilityState === 'visible' && acquire();
+    acquire();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      live = false;
+      document.removeEventListener('visibilitychange', onVisible);
+      lock?.release().catch(() => {});
+    };
+  }, [stopMs]);
 
   function adjust(sec) {
     setStartMs((s) => s - sec * 1000);
@@ -62,9 +102,10 @@ export default function LogSeizure({ circle, me, onDone }) {
       type: 'seizure',
       occurredAt: startMs,
       durationSec: elapsed,
-      seizureType,
+      seizureType: seizureType || 'unknown',
       triggers,
-      rescueMedGiven: rescue,
+      rescueMedGiven: rescue === true,
+      duringSleep: duringSleep || undefined,
       note: note.trim() || undefined,
       clipStatus: file ? 'uploading' : 'none',
       createdBy: me.uid,
@@ -89,7 +130,12 @@ export default function LogSeizure({ circle, me, onDone }) {
     return (
       <section className="stack">
         <p className="hint">Seizure in progress. Stay with them, and note what you see.</p>
-        <div className="timer" aria-live="off">{formatClock(elapsed)}</div>
+        <div className={`timer${overLimit ? ' over' : ''}`} aria-live="off">{formatClock(elapsed)}</div>
+        {overLimit && (
+          <p className="alert-msg" role="alert">
+            5 minutes. Follow their seizure plan. If you don’t have one, call emergency services now.
+          </p>
+        )}
         <button className="btn stop-btn" onClick={() => setStopMs(Date.now())}>Stop</button>
         <p className="hint small">Started earlier?</p>
         <div className="row" style={{ justifyContent: 'center' }}>
@@ -123,37 +169,100 @@ export default function LogSeizure({ circle, me, onDone }) {
     );
   }
 
+  const next = () => setStep((n) => Math.min(n + 1, STEPS));
+  const choose = (set, value) => {
+    set(value);
+    next();
+  };
+  const heading = (text) => <h1 ref={stepHeading} tabIndex={-1}>{text}</h1>;
+
   return (
     <section className="stack">
       <div className="spread">
-        <h1>Seizure · {formatDuration(elapsed)}</h1>
-        <button className="btn small" onClick={() => setStopMs(null)}>Resume</button>
+        {step > 1
+          ? <button className="btn ghost small" onClick={() => setStep(step - 1)}>← Back</button>
+          : <button className="btn small" onClick={() => setStopMs(null)}>Resume</button>}
+        <span className="muted">Seizure · {formatDuration(elapsed)}</span>
+      </div>
+      <div className="step-progress">
+        <span className="step-dots" aria-hidden="true">
+          {Array.from({ length: STEPS }, (_, i) => <span key={i} className={i < step ? 'on' : ''} />)}
+        </span>
+        <span className="muted small">Step {step} of {STEPS}</span>
       </div>
 
-      <label>Type</label>
-      <ChipGroup options={SEIZURE_TYPES} value={seizureType} onChange={setSeizureType} />
+      <div key={step} className="step stack">
+        {step === 1 && (
+          <>
+            <div className="spread">
+              {heading('What did it look like?')}
+              <button className="info-btn" aria-label="About seizure types" onClick={() => setShowInfo(true)}>i</button>
+            </div>
+            <div className="choices">
+              {SEIZURE_TYPES.map(([key, label]) => (
+                <button
+                  key={key} className={`choice${seizureType === key ? ' on' : ''}`} aria-pressed={seizureType === key}
+                  onClick={() => choose(setSeizureType, key)}
+                >
+                  <strong>{label}</strong>
+                  <span>{SEIZURE_INFO[key].short}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-      <label className="toggle">
-        <input type="checkbox" checked={rescue} onChange={(e) => setRescue(e.target.checked)} />
-        Rescue medication given
-      </label>
+        {step === 2 && (
+          <>
+            {heading('Was rescue medication given?')}
+            <div className="choices two">
+              {[[true, 'Yes'], [false, 'No']].map(([value, label]) => (
+                <button
+                  key={label} className={`choice${rescue === value ? ' on' : ''}`} aria-pressed={rescue === value}
+                  onClick={() => choose(setRescue, value)}
+                >
+                  <strong>{label}</strong>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-      <label>Possible triggers</label>
-      <ChipGroup options={TRIGGERS} value={triggers} onChange={setTriggers} multi />
+        {step === 3 && (
+          <>
+            {heading('Anything that might have set it off?')}
+            <p className="muted">Pick any that apply, or none.</p>
+            <ChipGroup options={TRIGGERS} value={triggers} onChange={setTriggers} multi />
+            <button className="btn" onClick={next}>Next</button>
+          </>
+        )}
 
-      <label>
-        Notes
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you see? How are they now?" />
-      </label>
+        {step === 4 && (
+          <>
+            {heading('How are they now?')}
+            <button type="button" className={`choice${duringSleep ? ' on' : ''}`} aria-pressed={duringSleep}
+              onClick={() => setDuringSleep(!duringSleep)}>
+              <strong>It happened while they were asleep</strong>
+              <span>Tap if it started during sleep</span>
+            </button>
+            <label>
+              Notes (optional)
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Sleepy, confused, hurt? Anything else you saw?" />
+            </label>
+            <label className="btn" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+              <Icon name="clip" /> {file ? `Clip: ${file.name}` : 'Add a video clip (optional)'}
+              <input type="file" accept="video/*" onChange={pickFile} hidden />
+            </label>
+            {fileError && <p className="error">{fileError}</p>}
+          </>
+        )}
+      </div>
 
-      <label className="btn" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-        <Icon name="clip" /> {file ? `Clip: ${file.name}` : 'Attach clip'}
-        <input type="file" accept="video/*" onChange={pickFile} hidden />
-      </label>
-      {fileError && <p className="error">{fileError}</p>}
-
+      {step < 3 && <button className="btn ghost small skip" onClick={next}>Skip →</button>}
       <button className="btn primary big" onClick={save}>Save seizure</button>
-      <button className="btn ghost" onClick={cancel}>Discard</button>
+      <button className="btn ghost small" onClick={cancel}>Discard this seizure</button>
+
+      {showInfo && <SeizureInfo onClose={() => setShowInfo(false)} />}
     </section>
   );
 }

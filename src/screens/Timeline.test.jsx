@@ -2,7 +2,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
-vi.mock('../data/entries.js', () => ({ addEntriesBatch: vi.fn() }));
+vi.mock('../data/entries.js', () => ({ addEntriesBatch: vi.fn(), addEntry: vi.fn() }));
+vi.mock('../data/circles.js', () => ({ updateCircle: vi.fn() }));
 
 import Timeline from './Timeline.jsx';
 

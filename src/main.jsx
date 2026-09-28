@@ -4,6 +4,11 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { missingConfig } from './lib/config.js';
 import './styles.css';
 
+// Offline app shell and home-screen install. Dev skips it so edits always show.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch((err) => console.error('service worker', err));
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 const missing = missingConfig(import.meta.env);
 

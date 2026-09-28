@@ -46,7 +46,7 @@ export default function EntryDetail({ circle, entry, me, onBack }) {
       <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}>← Back</button>
       <h1 className={`with-icon type-${entry.type}`}><Icon name={entry.type} size={28} />{meta.label}</h1>
 
-      <Media entry={entry} kind="clip" preload="metadata" />
+      <Media entry={entry} kind="clip" preload="metadata" shareable />
       <Media entry={entry} kind="photo" />
 
       <dl className="detail-rows card">

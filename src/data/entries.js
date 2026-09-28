@@ -1,5 +1,5 @@
 import {
-  collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, setDoc, Timestamp, updateDoc, writeBatch,
+  collection, deleteDoc, doc, onSnapshot, orderBy, query, setDoc, Timestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
@@ -45,7 +45,13 @@ export function deleteEntry(circleId, id) {
   return deleteDoc(doc(db, 'circles', circleId, 'entries', id));
 }
 
+// Enough for the longest summary (90 days) plus the 90 days before it that it's compared with.
+// ponytail: whole window loads on open (~5 entries/day ≈ 1,000 reads); add "load older" paging
+// if families need the timeline past 200 days or the free-plan read quota gets tight.
+export const HISTORY_DAYS = 200;
+
 export function subscribeEntries(circleId, onChange, onError) {
-  const q = query(entriesRef(circleId), orderBy('occurredAt', 'desc'), limit(500));
+  const since = Timestamp.fromMillis(Date.now() - HISTORY_DAYS * 24 * 3600 * 1000);
+  const q = query(entriesRef(circleId), where('occurredAt', '>=', since), orderBy('occurredAt', 'desc'));
   return onSnapshot(q, (snap) => onChange(snap.docs.map(fromFirestore)), onError);
 }

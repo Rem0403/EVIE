@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import ChipGroup from '../components/ChipGroup.jsx';
 import {
-  BEHAVIOR_KINDS, defaultSleepTimes, fromLocalInput, MED_STATUS, SLEEP_QUALITY, toLocalInput, TYPE_META,
+  BEHAVIOR_BEFORE, BEHAVIOR_HELPED, BEHAVIOR_KINDS, BEHAVIOR_LENGTH, defaultSleepTimes, fromLocalInput, INTENSITY,
+  MED_STATUS, SLEEP_QUALITY, toLocalInput, TYPE_META,
 } from '../lib/format.js';
 import { validatePhoto } from '../lib/validate.js';
 import { addEntry } from '../data/entries.js';
@@ -21,6 +22,12 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
   const [wake, setWake] = useState(toLocalInput(sleepDefaults.wakeTime));
   const [quality, setQuality] = useState(2);
   const [kind, setKind] = useState('meltdown');
+  const [before, setBefore] = useState([]);
+  const [helped, setHelped] = useState([]);
+  const [length, setLength] = useState(null);
+  const [intensity, setIntensity] = useState(null);
+  // A good day has no before / what helped; the details are only for when they were struggling.
+  const details = kind !== 'good_day';
   const [note, setNote] = useState('');
   const [photo, setPhoto] = useState(null);
   const [error, setError] = useState('');
@@ -43,7 +50,18 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
       if (!medName.trim()) return [null, 'Enter the medication name.'];
       return [{ ...base, occurredAt, medName: medName.trim(), dose: dose.trim() || undefined, status }];
     }
-    if (type === 'behavior') return [{ ...base, occurredAt, kind }];
+    if (type === 'behavior') {
+      if (!details) return [{ ...base, occurredAt, kind }];
+      return [{
+        ...base,
+        occurredAt,
+        kind,
+        before: before.length ? before : undefined,
+        helped: helped.length ? helped : undefined,
+        length: length || undefined,
+        intensity: intensity || undefined,
+      }];
+    }
     if (!note.trim() && !photo) return [null, 'Write a note or add a photo.'];
     return [{ ...base, occurredAt, photoStatus: photo ? 'uploading' : undefined }];
   }
@@ -124,7 +142,24 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
         </>
       )}
 
-      {type === 'behavior' && <ChipGroup options={BEHAVIOR_KINDS} value={kind} onChange={setKind} />}
+      {type === 'behavior' && (
+        <>
+          <span className="field-label">What happened?</span>
+          <ChipGroup options={BEHAVIOR_KINDS} value={kind} onChange={setKind} />
+          {details && (
+            <>
+              <span className="field-label">What happened before? (optional)</span>
+              <ChipGroup options={BEHAVIOR_BEFORE} value={before} onChange={setBefore} multi />
+              <span className="field-label">What helped? (optional)</span>
+              <ChipGroup options={BEHAVIOR_HELPED} value={helped} onChange={setHelped} multi />
+              <span className="field-label">How long? (optional)</span>
+              <ChipGroup options={BEHAVIOR_LENGTH} value={length} onChange={(v) => setLength(v === length ? null : v)} />
+              <span className="field-label">How intense? (optional)</span>
+              <ChipGroup options={INTENSITY} value={intensity} onChange={(v) => setIntensity(v === intensity ? null : v)} />
+            </>
+          )}
+        </>
+      )}
 
       {type !== 'sleep' && (
         <label>

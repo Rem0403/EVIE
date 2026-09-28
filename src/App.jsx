@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ensureSignedIn } from './firebase.js';
-import { getCircle } from './data/circles.js';
+import { getCircle, subscribeCircle, upgradeJoinCode } from './data/circles.js';
 import { subscribeEntries } from './data/entries.js';
 import { clearSession, loadSession, saveSession } from './lib/session.js';
 import { loadSeizureDraft } from './lib/seizureDraft.js';
@@ -11,6 +11,7 @@ import LogSeizure from './screens/LogSeizure.jsx';
 import QuickLog from './screens/QuickLog.jsx';
 import EntryDetail from './screens/EntryDetail.jsx';
 import Summary from './screens/Summary.jsx';
+import CarePlan from './screens/CarePlan.jsx';
 
 const DEMO = new URLSearchParams(location.search).has('demo');
 
@@ -33,7 +34,10 @@ export default function App() {
       if (session) {
         const c = await getCircle(session.circleId);
         if (c && c.memberIds.includes(u.uid)) {
-          setCircle(c);
+          setCircle(await upgradeJoinCode(c).catch((err) => {
+            console.error('join code upgrade', err); // try again next open; the circle still works
+            return c;
+          }));
           setName(session.name);
         } else {
           clearSession();
@@ -49,6 +53,12 @@ export default function App() {
   useEffect(() => {
     boot();
   }, []);
+
+  // Keep the circle live so care plan and medication schedule edits reach every phone.
+  useEffect(() => {
+    if (!circle) return undefined;
+    return subscribeCircle(circle.id, setCircle, (err) => console.error('circle subscription', err));
+  }, [circle?.id]);
 
   useEffect(() => {
     if (!circle) return undefined;
@@ -113,6 +123,9 @@ export default function App() {
           : <div className="center"><p className="muted">This entry was deleted.</p><button className="btn" onClick={back}>Back</button></div>;
         break;
       }
+      case 'careplan':
+        body = <CarePlan circle={circle} onDone={home} />;
+        break;
       case 'summary':
         body = (
           <Summary
@@ -137,6 +150,7 @@ export default function App() {
             onLogSeizure={() => go({ name: 'seizure' })}
             onQuickLog={(type) => go({ name: 'quick', type })}
             onSummary={() => go({ name: 'summary' })}
+            onCarePlan={() => go({ name: 'careplan' })}
             onLeave={leaveCircle}
           />
         );

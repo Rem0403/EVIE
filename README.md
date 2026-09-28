@@ -11,18 +11,31 @@ Care information ends up scattered across group texts, paper notes and a camera 
 ## What EVIE does
 
 - **One-tap seizure timer.** Tap **Seizure** and the timer starts at once, because in the moment you have one hand free. Afterwards, add the type, the possible triggers, whether rescue medication was given, notes and a video clip. If the page reloads mid-seizure, the timer keeps its time.
+- **A 5-minute alert.** At 5 minutes the timer turns red, the phone vibrates and a reminder to follow the seizure plan appears. The screen stays on while the timer runs.
+- **Guided seizure details.** After the timer stops, four short steps ask what it looked like, whether rescue medication was given, possible triggers, and how they are now. Every step can be skipped and Save is always on screen. Each seizure type has a one-line description, and an **i** button opens a fuller guide to seizure types, recovery and first aid, adapted from Wikipedia.
 - **Quick logs.** Medication (given, missed or rescue), sleep, behavior and notes each take a few taps, with big buttons designed for stressful moments.
-- **A shared, live timeline.** Everyone in the family "care circle" sees new entries as they're logged, grouped by day and showing who logged what.
+- **Care plan.** An "About" page for the person: diagnoses (the conditions most often seen alongside epilepsy and autism are listed first), how they communicate, what helps them, what to avoid, and the daily medication schedule. Everyone in the circle sees it, and the diagnoses print on the doctor summary.
+- **Today's meds.** Each scheduled dose appears on the timeline with **Given** and **Missed** buttons. Once a dose is logged, everyone sees who gave it and when, so caregivers don't double-dose or both skip it.
+- **Handoff.** A banner shows who is with the person now and until when. **Take over** shows what happened since the last handoff (seizures, doses, meltdowns) and lets you leave a note for everyone.
+- **Behavior logs built for autism.** Log a meltdown, shutdown, self-injury, anxious time or good day, and optionally what happened before (sensory, change of routine, hunger, tiredness, pain…), what helped, how long it lasted and how intense it was.
+- **A shared, live timeline.** Everyone in the family "care circle" sees new entries as they're logged, grouped by day and showing who logged what. It shows the last 200 days.
 - **A doctor summary.** Choose the last 7, 30 or 90 days to see:
   - seizure count, average length, longest seizure and rescue medication uses
+  - seizures of 5 minutes or longer, and clusters (2 or more within 24 hours)
+  - a comparison with the previous period, and the number of seizure-free days
+  - how often each trigger was noted, and how many seizures happened during sleep
+  - how many scheduled doses were logged as given
+  - behavior counts, what most often came before a hard time, and what helped
+  - whether meltdowns, shutdowns, self-injury or anxious times often came in the 24 hours before or after seizures
   - a day-by-day strip
   - pattern observations such as "3 of 4 seizures came within 24h of a missed dose"
   - the full seizure list
 
-  It can be printed or saved as a PDF. The patterns describe what was logged; they aren't medical advice.
+  It can be downloaded as a PDF or a CSV file, or printed. The patterns describe what was logged; they aren't medical advice.
 - **Works offline.** Entries save on the phone and sync when the connection returns.
-- **No accounts.** Anonymous sign-in plus a shared join code (for example `EVIE-4821`). Nobody has to create a login or remember a password.
-- **Private video.** Clips and photos stay on the phone that recorded them, and other family members see "Clip saved on Remy's phone".
+- **No accounts.** Anonymous sign-in plus a shared join code (for example `EVIE-7KQ4-M2XP`). Nobody has to create a login or remember a password.
+- **Private video.** Clips and photos stay on the phone that recorded them, and other family members see "Clip saved on Remy's phone". **Share clip** sends a clip from that phone through its share menu, for example to the neurologist.
+- **Installs like an app.** It can be added to the home screen and opens without a signal once it has been used online.
 - **Calm, accessible design.** Soft neutral colors, epilepsy-awareness purple, large touch targets and text contrast that meets WCAG AA. Dark mode follows the phone's setting, and animation turns off when the phone's reduced-motion setting is on.
 
 ## Tech stack
@@ -32,7 +45,8 @@ Care information ends up scattered across group texts, paper notes and a camera 
 | Frontend | React 18 and Vite, with plain CSS |
 | Backend | Firebase (anonymous Authentication and Cloud Firestore with an offline cache), on the free Spark plan |
 | Media | IndexedDB, so clips and photos stay on the device |
-| Tests | Vitest and Testing Library (98 tests) |
+| PDF | jsPDF, loaded only when a PDF is downloaded |
+| Tests | Vitest and Testing Library (155 tests), plus 19 security-rules tests on the Firestore emulator |
 | Deployment | Docker (nginx) or Firebase Hosting |
 
 ## Getting started
@@ -92,24 +106,30 @@ This gives an HTTPS link that works on any phone and network.
 | `npm run preview` | Serve the production build locally |
 | `npm test` | Run the test suite once |
 | `npm run test:watch` | Run the tests in watch mode |
+| `npm run test:rules` | Test `firestore.rules` on the Firestore emulator (needs Java). On Windows the emulator can keep running afterwards; if the next run says port 8088 is taken, end that `java` process |
 
 ## Project structure
 
 ```
 src/
   App.jsx          screen routing and the sign-in and circle session
-  screens/         Welcome, Timeline, LogSeizure, QuickLog, EntryDetail, Summary
-  components/      EntryCard, BottomBar, ChipGroup, Media, Icon, OfflineBanner, ErrorBoundary
+  screens/         Welcome, Timeline, LogSeizure, QuickLog, EntryDetail, Summary, CarePlan
+  components/      EntryCard, BottomBar, ChipGroup, Media, SeizureInfo, TodayMeds, Handoff, Icon, OfflineBanner, ErrorBoundary
   data/            Firestore access (circles, entries) and on-device media
-  lib/             pure logic: formatting, summary and patterns, validation, demo data
+  lib/             pure logic: formatting, summary and patterns, medication schedule, handoff, exports (CSV and PDF), seizure guide, validation, demo data
   styles.css       design tokens (light and dark) and all styles
-firestore.rules    security rules: only circle members can read or write its entries
+public/            web app manifest, icon and offline service worker
+test/              security-rules tests (run with npm run test:rules)
+firestore.rules    security rules: only circle members can read a circle or its entries
 DEMO.md            4-minute demo script and pre-stage checklist
 ```
 
 ## Privacy and security
 
-- Only members of a circle can read or write its entries, and only the person who created an entry can delete it (see `firestore.rules`).
+- Only members of a circle can read the circle or its entries. Circles can't be listed or searched (see `firestore.rules`).
+- Join codes have 8 random characters (about 850 billion possibilities), so they can't be guessed. A code can only be looked up by its exact value, and joining is refused unless it matches the circle's current code.
+- Members can edit the care plan and medication schedule, but can't remove other members. Each entry records who logged it, that can't be changed later, and only that person can delete it.
+- Circles created before the longer codes get a new code the first time a member opens the app. The old 4-digit code then stops working for new joins.
 - Videos and photos never leave the phone they were added on.
 - The Firebase web config in `.env.local` is designed to be public; access is controlled by the security rules. For a public deployment, also restrict the API key to your domains in the Google Cloud console.
 

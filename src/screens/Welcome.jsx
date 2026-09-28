@@ -44,7 +44,7 @@ export default function Welcome({ uid, onJoined }) {
   async function handleJoin(e) {
     e.preventDefault();
     if (!normalizeJoinCode(code)) {
-      setError('Codes look like EVIE-1234.');
+      setError('Codes look like EVIE-7KQ4-M2XP.');
       return;
     }
     if (!navigator.onLine) {
@@ -108,7 +108,7 @@ export default function Welcome({ uid, onJoined }) {
         <h1>Join a care circle</h1>
         <label>
           Join code
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="EVIE-1234" autoCapitalize="characters" required />
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="EVIE-7KQ4-M2XP" autoCapitalize="characters" required />
         </label>
         <label>
           Your name

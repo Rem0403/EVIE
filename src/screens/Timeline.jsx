@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ChipGroup from '../components/ChipGroup.jsx';
 import EntryCard from '../components/EntryCard.jsx';
 import BottomBar from '../components/BottomBar.jsx';
+import TodayMeds from '../components/TodayMeds.jsx';
+import Handoff from '../components/Handoff.jsx';
 import Icon from '../components/Icon.jsx';
 import { groupByDay } from '../lib/format.js';
 import { shareJoinCode, shareMessage } from '../lib/share.js';
 import { useFlash } from '../lib/useFlash.js';
-import { buildDemoWeek } from '../lib/demoWeek.js';
+import { buildDemoWeek, DEMO_CARE_PLAN } from '../lib/demoWeek.js';
 import { addEntriesBatch } from '../data/entries.js';
+import { updateCircle } from '../data/circles.js';
 
 const FILTERS = [
   ['all', 'All'],
@@ -25,11 +28,19 @@ const QUICK_TYPES = [
   ['note', 'Note'],
 ];
 
-export default function Timeline({ circle, me, entries, loading = false, demo, onOpen, onLogSeizure, onQuickLog, onSummary, onLeave }) {
+export default function Timeline({
+  circle, me, entries, loading = false, demo, onOpen, onLogSeizure, onQuickLog, onSummary, onCarePlan, onLeave,
+}) {
   const [filter, setFilter] = useState('all');
   const [chooser, setChooser] = useState(false);
   const [toast, setToast] = useFlash();
   const [seeding, setSeeding] = useState(false);
+  // Re-render each minute so doses turn "Due", and handoffs end, while the app sits open.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   const visible = filter === 'all' ? entries : entries.filter((e) => e.type === filter);
   const groups = groupByDay(visible);
@@ -44,6 +55,8 @@ export default function Timeline({ circle, me, entries, loading = false, demo, o
     setSeeding(true);
     try {
       await addEntriesBatch(circle.id, buildDemoWeek(Date.now(), me));
+      // Only fill in a care plan nobody has written yet.
+      if (!circle.meds?.length && !circle.profile) await updateCircle(circle.id, DEMO_CARE_PLAN);
     } catch (err) {
       console.error(err);
       setToast("Couldn't load demo data.");
@@ -60,8 +73,18 @@ export default function Timeline({ circle, me, entries, loading = false, demo, o
           <button className="code-chip" onClick={share}>Code {circle.joinCode} · invite</button>
           {toast && <p className="muted small">{toast}</p>}
         </div>
-        <button className="btn small" onClick={onSummary}>Summary</button>
+        <div className="row">
+          <button className="btn small" onClick={onCarePlan}>Care plan</button>
+          <button className="btn small" onClick={onSummary}>Summary</button>
+        </div>
       </header>
+
+      {!loading && (
+        <>
+          <Handoff circle={circle} me={me} entries={entries} now={now} />
+          <TodayMeds circle={circle} me={me} entries={entries} now={now} onSetUp={onCarePlan} />
+        </>
+      )}
 
       <div className="chips scroll">
         <ChipGroup options={FILTERS} value={filter} onChange={setFilter} />
