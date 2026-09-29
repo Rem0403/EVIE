@@ -24,3 +24,4 @@ async function run(mode, fn) {
 
 export const putMedia = (key, blob) => run('readwrite', (s) => s.put(blob, key));
 export const getMedia = (key) => run('readonly', (s) => s.get(key));
+export const deleteMedia = (key) => run('readwrite', (s) => s.delete(key));

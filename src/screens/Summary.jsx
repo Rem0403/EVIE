@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import ChipGroup from '../components/ChipGroup.jsx';
+import Tabs, { tabPanelProps } from '../components/Tabs.jsx';
 import Media from '../components/Media.jsx';
 import Icon from '../components/Icon.jsx';
 import { countByType, LONG_SEIZURE_SEC, summaryReport } from '../lib/summary.js';
@@ -51,83 +51,86 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
       </div>
 
       <div className="no-print">
-        <ChipGroup options={RANGES} value={days} onChange={onDaysChange} />
+        <Tabs id="range" label="Date range" options={RANGES} value={days} onChange={onDaysChange} />
       </div>
 
-      <div className="stats">
-        <div className="stat"><div className="stat-value">{stats.count}</div><div className="stat-label">Seizures</div></div>
-        <div className="stat"><div className="stat-value">{formatDuration(stats.avgDurationSec)}</div><div className="stat-label">Average length</div></div>
-        <div className="stat"><div className="stat-value">{formatDuration(stats.maxDurationSec)}</div><div className="stat-label">Longest</div></div>
-        <div className="stat"><div className="stat-value">{stats.rescueCount}</div><div className="stat-label">Rescue medication uses</div></div>
-        <div className="stat"><div className="stat-value">{report.longCount}</div><div className="stat-label">5 min or longer</div></div>
-        <div className="stat"><div className="stat-value">{report.clusters}</div><div className="stat-label">Clusters (2+ in 24h)</div></div>
-        <div className="stat"><div className="stat-value">{report.sleepCount}</div><div className="stat-label">During sleep</div></div>
-        <div className="stat"><div className="stat-value">{report.doseText}</div><div className="stat-label">Scheduled doses given</div></div>
-      </div>
-      <p className="muted">{report.compareText} · {report.seizureFreeText}</p>
-      {report.typeText && <p className="muted">Types: {report.typeText}</p>}
-      {report.triggerText && <p className="muted">Triggers noted: {report.triggerText}</p>}
-      <p className="muted small">
-        All logs:{' '}
-        {countByType(inRange).map(([t, n]) => (
-          <span key={t} className={`count type-${t}`}><Icon name={t} size={15} /> {n} {TYPE_META[t].label.toLowerCase()}</span>
-        ))}
-      </p>
+      <div {...tabPanelProps('range', days)} className="stack tab-panel">
 
-      <h2>Patterns</h2>
-      {found.length === 0 && <p className="muted">No clear patterns in this range yet.</p>}
-      {found.map((p) => <div key={p.id} className="callout">{p.text}</div>)}
-      <p className="muted small">Patterns are observations from logged data, not medical advice.</p>
-
-      <h2>Behavior</h2>
-      {report.behaviorText ? (
-        <>
-          <p>{report.behaviorText}</p>
-          {report.beforeText && <p className="muted">Often before a hard time: {report.beforeText}</p>}
-          {report.helpedText && <p className="muted">What helped: {report.helpedText}</p>}
-        </>
-      ) : <p className="muted">No behavior logged in this range.</p>}
-
-      <h2>Day by day</h2>
-      <p className="muted small"><span className="type-seizure"><Icon name="seizure" size={15} /></span> seizures · <span className="type-med"><Icon name="med" size={15} /></span> missed doses · sleep quality shown as Poor, OK or Good</p>
-      <div className="strip">
-        {strip.map((d) => (
-          <div key={d.date} className="strip-row">
-            <span>{shortDate(d.date)}</span>
-            <span className="strip-marks">
-              {d.seizures > 0 && <span className="with-icon type-seizure"><Icon name="seizure" size={15} />×{d.seizures}</span>}
-              {d.missedMeds > 0 && <span className="with-icon type-med"><Icon name="med" size={15} />missed ×{d.missedMeds}</span>}
-            </span>
-            <span className="sleep-q">
-              <span className={`dot${d.sleepQuality ? ` q${d.sleepQuality}` : ''}`} aria-hidden="true" />
-              <span className="small muted">{d.sleepQuality ? labelOf(SLEEP_QUALITY, d.sleepQuality) : 'No sleep log'}</span>
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <h2>Seizures</h2>
-      {seizures.length === 0 && <p className="muted">None logged in this range.</p>}
-      {seizures.map((s) => (
-        <div key={s.id} className="card">
-          <div className="spread">
-            <strong>
-              {labelOf(SEIZURE_TYPES, s.seizureType || 'unknown')} · {formatDuration(s.durationSec)}
-              {(s.durationSec || 0) >= LONG_SEIZURE_SEC && <span className="entry-warn"> · 5 min or longer</span>}
-            </strong>
-            <span className="muted small">{shortDate(s.occurredAt)} {formatTime(s.occurredAt)}</span>
-          </div>
-          {s.rescueMedGiven && <p className="small">Rescue medication given</p>}
-          {s.note && <p className="small">{s.note}</p>}
-          {s.clipStatus === 'done' && (
-            <>
-              <div className="no-print"><Media entry={s} kind="clip" className="entry-clip" /></div>
-              <p className="small print-only">Video clip available in the EVIE app</p>
-            </>
-          )}
-          <button className="btn ghost small no-print" onClick={() => onOpen(s.id)}>Open entry</button>
+        <div className="stats">
+          <div className="stat"><div className="stat-value">{stats.count}</div><div className="stat-label">Seizures</div></div>
+          <div className="stat"><div className="stat-value">{formatDuration(stats.avgDurationSec)}</div><div className="stat-label">Average length</div></div>
+          <div className="stat"><div className="stat-value">{formatDuration(stats.maxDurationSec)}</div><div className="stat-label">Longest</div></div>
+          <div className="stat"><div className="stat-value">{stats.rescueCount}</div><div className="stat-label">Rescue medication uses</div></div>
+          <div className="stat"><div className="stat-value">{report.longCount}</div><div className="stat-label">5 min or longer</div></div>
+          <div className="stat"><div className="stat-value">{report.clusters}</div><div className="stat-label">Clusters (2+ in 24h)</div></div>
+          <div className="stat"><div className="stat-value">{report.sleepCount}</div><div className="stat-label">During sleep</div></div>
+          <div className="stat"><div className="stat-value">{report.doseText}</div><div className="stat-label">Scheduled doses given</div></div>
         </div>
-      ))}
+        <p className="muted">{report.compareText} · {report.seizureFreeText}</p>
+        {report.typeText && <p className="muted">Types: {report.typeText}</p>}
+        {report.triggerText && <p className="muted">Triggers noted: {report.triggerText}</p>}
+        <p className="muted small">
+          All logs:{' '}
+          {countByType(inRange).map(([t, n]) => (
+            <span key={t} className={`count type-${t}`}><Icon name={t} size={15} /> {n} {TYPE_META[t].label.toLowerCase()}</span>
+          ))}
+        </p>
+
+        <h2>Patterns</h2>
+        {found.length === 0 && <p className="muted">No clear patterns in this range yet.</p>}
+        {found.map((p) => <div key={p.id} className="callout">{p.text}</div>)}
+        <p className="muted small">Patterns are observations from logged data, not medical advice.</p>
+
+        <h2>Behavior</h2>
+        {report.behaviorText ? (
+          <>
+            <p>{report.behaviorText}</p>
+            {report.beforeText && <p className="muted">Often before a hard time: {report.beforeText}</p>}
+            {report.helpedText && <p className="muted">What helped: {report.helpedText}</p>}
+          </>
+        ) : <p className="muted">No behavior logged in this range.</p>}
+
+        <h2>Day by day</h2>
+        <p className="muted small"><span className="type-seizure"><Icon name="seizure" size={15} /></span> seizures · <span className="type-med"><Icon name="med" size={15} /></span> missed doses · sleep quality shown as Poor, OK or Good</p>
+        <div className="strip">
+          {strip.map((d) => (
+            <div key={d.date} className="strip-row">
+              <span>{shortDate(d.date)}</span>
+              <span className="strip-marks">
+                {d.seizures > 0 && <span className="with-icon type-seizure"><Icon name="seizure" size={15} />×{d.seizures}</span>}
+                {d.missedMeds > 0 && <span className="with-icon type-med"><Icon name="med" size={15} />missed ×{d.missedMeds}</span>}
+              </span>
+              <span className="sleep-q">
+                <span className={`dot${d.sleepQuality ? ` q${d.sleepQuality}` : ''}`} aria-hidden="true" />
+                <span className="small muted">{d.sleepQuality ? labelOf(SLEEP_QUALITY, d.sleepQuality) : 'No sleep log'}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <h2>Seizures</h2>
+        {seizures.length === 0 && <p className="muted">None logged in this range.</p>}
+        {seizures.map((s) => (
+          <div key={s.id} className="card">
+            <div className="spread">
+              <strong>
+                {labelOf(SEIZURE_TYPES, s.seizureType || 'unknown')} · {formatDuration(s.durationSec)}
+                {(s.durationSec || 0) >= LONG_SEIZURE_SEC && <span className="entry-warn"> · 5 min or longer</span>}
+              </strong>
+              <span className="muted small">{shortDate(s.occurredAt)} {formatTime(s.occurredAt)}</span>
+            </div>
+            {s.rescueMedGiven && <p className="small">Rescue medication given</p>}
+            {s.note && <p className="small">{s.note}</p>}
+            {s.clipStatus === 'done' && (
+              <>
+                <div className="no-print"><Media entry={s} kind="clip" className="entry-clip" /></div>
+                <p className="small print-only">Video clip available in the EVIE app</p>
+              </>
+            )}
+            <button className="btn ghost small no-print" onClick={() => onOpen(s.id)}>Open entry</button>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

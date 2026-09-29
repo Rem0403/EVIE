@@ -3,8 +3,8 @@
   "short_name": "EVIE",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f2f2f7",
-  "theme_color": "#6b4f9e",
+  "background_color": "#ebe5f6",
+  "theme_color": "#7a3fc0",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]

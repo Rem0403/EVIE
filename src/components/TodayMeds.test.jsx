@@ -23,11 +23,11 @@ afterEach(() => {
 it('shows who gave a dose, and offers Given / Missed for the rest', () => {
   const given = { type: 'med', occurredAt: new Date(2026, 8, 28, 8, 5).getTime(), medName: 'Keppra', status: 'given', slot: '08:00', createdByName: 'Mom' };
   render(<TodayMeds circle={circle} me={me} entries={[given]} onSetUp={vi.fn()} />);
-  expect(screen.getByText('1 of 2 given')).toBeTruthy();
+  expect(document.body.textContent).toContain('1 of 2 given');
   // Collapsed: only the next dose, with its one-tap buttons.
   expect(screen.queryByText('✓ Given · Mom · 8:05 AM')).toBeNull();
   expect(screen.getByRole('button', { name: 'Keppra 8:00 PM given' })).toBeTruthy();
-  fireEvent.click(screen.getByText('All of today’s doses (2)'));
+  fireEvent.click(screen.getByRole('button', { name: /All of today’s doses \(2\)/ }));
   expect(screen.getByText('✓ Given · Mom · 8:05 AM')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Keppra 8:00 AM given' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Keppra 8:00 PM given' })).toBeTruthy();

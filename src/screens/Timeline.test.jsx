@@ -24,16 +24,23 @@ it('shows the empty message once loaded with no entries', () => {
   expect(screen.getByText(/Nothing logged yet/)).toBeTruthy();
 });
 
-it('keeps Start seizure on home and moves care plan, schedule and support into More', () => {
-  const onCarePlan = vi.fn();
-  render(<Timeline {...props} loading={false} onCarePlan={onCarePlan} onSchedule={vi.fn()} onSupport={vi.fn()} />);
-  expect(screen.getByRole('button', { name: /Start seizure/ })).toBeTruthy();
+it('shows everything until a type chip is chosen, and clears it on a second tap', () => {
+  const entries = [
+    { id: 'a', type: 'seizure', occurredAt: Date.now() - 1000, durationSec: 30, createdByName: 'Mom' },
+    { id: 'b', type: 'note', occurredAt: Date.now() - 2000, note: 'Calm afternoon', createdByName: 'Dad' },
+  ];
+  render(<Timeline {...props} entries={entries} loading={false} />);
+  expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
+  expect(screen.getByText('Calm afternoon')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Seizures' }));
+  expect(screen.queryByText('Calm afternoon')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Seizures' }));
+  expect(screen.getByText('Calm afternoon')).toBeTruthy();
+});
+
+it('keeps Emergency info on home', () => {
+  render(<Timeline {...props} loading={false} />);
   expect(screen.getByRole('button', { name: /Emergency info/ })).toBeTruthy();
-  expect(screen.queryByText('Care plan')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'More' }));
-  fireEvent.click(screen.getByText('Care plan'));
-  expect(onCarePlan).toHaveBeenCalled();
-  expect(screen.queryByRole('dialog')).toBeNull();
 });
 
 it('shows a still loading placeholder, marked busy', () => {

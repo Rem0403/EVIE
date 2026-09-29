@@ -2,6 +2,7 @@ import { COMMUNICATION, diagnosisText, labelOf } from '../lib/format.js';
 import { CONTACT_ROLES } from '../lib/careplan.js';
 import { formatSlot } from '../lib/meds.js';
 import { telHref } from '../lib/resources.js';
+import AttachmentList from './AttachmentList.jsx';
 
 // What a caregiver, babysitter or paramedic needs first. Built from the care plan, and readable
 // offline because the circle is in Firestore's local cache.
@@ -66,6 +67,13 @@ export default function EmergencyInfo({ circle, onEditPlan }) {
               {m.notes && <span className="small"> · {m.notes}</span>}
             </p>
           ))}
+        </section>
+      )}
+
+      {circle.documents?.length > 0 && (
+        <section>
+          <h3>Documents</h3>
+          <AttachmentList items={circle.documents} label="Care plan documents" />
         </section>
       )}
 

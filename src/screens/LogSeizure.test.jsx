@@ -12,7 +12,7 @@ const T0 = new Date(2026, 8, 26, 7, 0).getTime();
 const props = () => ({ circle: { id: 'c1' }, me: { uid: 'u1', name: 'Remy' }, onDone: vi.fn() });
 
 beforeEach(() => {
-  sessionStorage.clear();
+  localStorage.clear();
   vi.clearAllMocks();
   vi.useFakeTimers({ now: T0 });
 });
@@ -139,4 +139,19 @@ it('opens emergency info over the timer without stopping it', () => {
   expect(screen.getByRole('dialog', { name: 'Emergency info' }).textContent).toMatch(/Penicillin/);
   act(() => vi.advanceTimersByTime(3_000));
   expect(screen.getByText('00:03')).toBeTruthy();
+});
+
+it('keeps answers given after Stop if the app closes (e.g. while filming a clip)', () => {
+  render(<LogSeizure {...props()} />);
+  fireEvent.click(screen.getByText('Stop'));
+  fireEvent.click(screen.getByRole('button', { name: /^Focal/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+  fireEvent.click(screen.getByText('Fever'));
+  cleanup(); // app closed and reopened
+  render(<LogSeizure {...props()} />);
+  expect(screen.getByText('Step 3 of 4')).toBeTruthy();
+  expect(screen.getByText('Fever').getAttribute('aria-pressed')).toBe('true');
+  fireEvent.click(screen.getByText('Next'));
+  fireEvent.click(screen.getByText('Save seizure'));
+  expect(addEntry).toHaveBeenCalledWith('c1', expect.objectContaining({ seizureType: 'focal', rescueMedGiven: true, triggers: ['fever'] }));
 });

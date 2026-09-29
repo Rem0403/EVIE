@@ -10,11 +10,12 @@ Care information ends up scattered across group texts, paper notes and a camera 
 
 ## What EVIE does
 
-- **One-tap seizure timer.** Tap **Start seizure** and the timer starts at once, because in the moment you have one hand free. Afterwards, add the type, the possible triggers, whether rescue medication was given, notes and a video clip. If the page reloads mid-seizure, the timer keeps its time.
+- **One-tap seizure timer.** Tap the round **Seizure** button in the middle of the bottom bar and the timer starts at once, because in the moment you have one hand free. Afterwards, add the type, the possible triggers, whether rescue medication was given, notes and a video clip. If the page reloads or the phone closes the app mid-seizure (for example while filming), the timer and every answer so far are kept.
 - **A 5-minute alert.** At 5 minutes the timer turns red, the phone vibrates and a reminder to follow the seizure plan appears. The screen stays on while the timer runs.
 - **Guided seizure details.** After the timer stops, four short steps ask what it looked like, whether rescue medication was given, possible triggers, and how they are now. Every step can be skipped and Save is always on screen. Each seizure type has a one-line description, and an **i** button opens a fuller guide to seizure types, recovery and first aid, adapted from Wikipedia.
 - **Quick logs.** Medication (given, missed or rescue), sleep, behavior and notes each take a few taps, with big buttons designed for stressful moments.
 - **Care plan.** An "About" page for the person: their seizure plan, allergies, emergency contacts, diagnoses (the conditions most often seen alongside epilepsy and autism are listed first), how they communicate, what helps them, what to avoid, their daily routine, and the daily medications with what each is for. Everyone in the circle sees it, and the diagnoses print on the doctor summary.
+- **Attachments and documents.** Notes can hold several photos, PDFs or documents (drag and drop, or tap to choose; up to 10 files, 25 MB each). The care plan has a **Documents** section for the doctor's seizure plan, letters, the IEP and test results, which also appears in Emergency info. Files stay on the phone that added it; others see the list and whose phone has each file, and can ask for it to be shared.
 - **Emergency info.** One tap from the timeline, and from the seizure timer without stopping it: Call 911, their seizure plan, contacts with tap-to-call, allergies, diagnoses, how to communicate with them, and their medications. It works offline and can be printed for the fridge.
 - **Caregiver schedule.** A weekly schedule of who is with them when (paid caregivers, family, respite), including overnight shifts. The handoff banner shows who is scheduled now. It's the family's own plan, not a timesheet: the app says that Medicaid-paid personal care has to be recorded in the state's electronic visit verification (EVV) system.
 - **Today's meds.** Each scheduled dose appears on the timeline with **Given** and **Missed** buttons. Once a dose is logged, everyone sees who gave it and when, so caregivers don't double-dose or both skip it.
@@ -39,6 +40,7 @@ Care information ends up scattered across group texts, paper notes and a camera 
 - **No accounts.** Anonymous sign-in plus a shared join code (for example `EVIE-7KQ4-M2XP`). Nobody has to create a login or remember a password.
 - **Private video.** Clips and photos stay on the phone that recorded them, and other family members see "Clip saved on Remy's phone". **Share clip** sends a clip from that phone through its share menu, for example to the neurologist.
 - **Installs like an app.** It can be added to the home screen and opens without a signal once it has been used online.
+- **One tap to anywhere.** A floating bar on every screen (except the seizure timer) has Home, Care summary, the round Seizure button, Log (+) and More. More holds the care plan, schedule, support, invites and an **Appearance** setting: System, Light or Dark mode, and a choice of soothing color palettes (Lavender, Soft blue, Sage, Soft pink, Earth).
 - **Calm, accessible design.** Soft neutral colors, epilepsy-awareness purple, large touch targets and text contrast that meets WCAG AA. Dark mode follows the phone's setting, and animation turns off when the phone's reduced-motion setting is on.
 
 ## Tech stack
@@ -49,6 +51,7 @@ Care information ends up scattered across group texts, paper notes and a camera 
 | Backend | Firebase (anonymous Authentication and Cloud Firestore with an offline cache), on the free Spark plan |
 | Media | IndexedDB, so clips and photos stay on the device |
 | PDF | jsPDF, loaded only when a PDF is downloaded |
+| Font | Lexend, bundled with the app (SIL Open Font License, see `src/assets/fonts/Lexend-OFL.txt`) |
 | Tests | Vitest and Testing Library (205 tests), plus 23 security-rules tests on the Firestore emulator |
 | Deployment | Docker (nginx) or Firebase Hosting |
 

@@ -18,8 +18,8 @@
 
 ## Script (≈5 min; for 4 min, skip steps 5 and 6)
 1. **Problem (30s):** Group texts, paper notes, a camera roll full of seizure videos, and nobody sure whether the 8 PM dose was given. When the neurologist asks "how many this month, and what happened before?", nobody has the whole picture.
-2. **Home (30s):** Phone A. One shared timeline for the whole family. The top shows **In an emergency** (contacts, seizure plan, allergies), **who is with her now** and who's scheduled, **today's meds** with who gave each dose, and a **follow-up** for the waiver waiting list.
-3. **Seizure (60s):** Tap **Start seizure**, the big purple button. The timer starts instantly, because in the moment you have one hand free. Mention that at 5 minutes it turns red, vibrates and says to follow the seizure plan. Tap **Stop**, then walk through the four short steps:
+2. **Home (30s):** Phone A. At a glance: **seizures this week** and **last night's sleep**, **today's meds** with who gave each dose, **who is with her now** and who's scheduled, **Emergency info**, and a **follow-up** for the waiver waiting list. Below is one shared timeline for the whole family.
+3. **Seizure (60s):** Tap the big round **Seizure** button in the middle of the bottom bar. The timer starts instantly, because in the moment you have one hand free. Mention that at 5 minutes it turns red, vibrates and says to follow the seizure plan. Tap **Stop**, then walk through the four short steps:
    - Before tapping Stop, tap **Emergency info**: a new babysitter sees the seizure plan and who to call, and the timer keeps running. Close it.
    - Tap **i** to show the plain-language guide, then pick **Tonic-clonic**.
    - Rescue medication: **No**.
@@ -29,9 +29,9 @@
    The clip stays on this phone for privacy; the others see "Clip saved on <you>'s phone".
 4. **Handoff (30s):** Hold up Phone B. The seizure is already there. Tap **Take over**. It shows everything since the last handoff ("1 seizure · …"). Add a note, then **Take over**. Phone A's banner now says "With Dad".
 5. **Meds (15s):** Phone B: in Today's meds, tap **Given** on a dose. Phone A shows "✓ Given · Dad". No double doses, no guessing.
-6. **Autism (20s):** Phone B: **+ Log → Behavior → Meltdown**. Before: **Sensory**, **Tired**. What helped: **Quiet or dim space**. **Save**.
-7. **Doctor summary (60s):** Phone A: **Care summary → 30 days**. Show the stats, "During sleep" and "Scheduled doses given". Then the key callout: *"3 of 5 seizures had a meltdown, shutdown, self-injury or anxious time logged in the 24h before."* For a child who can't say "I feel a seizure coming", that's the family's early warning. Show the Behavior section ("Often before a hard time: Sensory…"). Explain that every number traces back to a logged entry, and that EVIE shows what happened together, not what caused it. Tap **Download PDF**.
-8. **Support (30s):** Tap **More → Support and resources**. The family's programs and groups live here, with the waiver waiting-list call due today. Open **Start here**. It's written for the parent who was told "your child has a disability" and then given no support: early intervention, waivers, IEP transition plans, turning 18, social groups. Each item links to an official source.
+6. **Autism (20s):** Phone B: **+** in the bottom bar → **Behavior** → **Meltdown**. Before: **Sensory**, **Tired**. What helped: **Quiet or dim space**. **Save**.
+7. **Doctor summary (60s):** Phone A: the **Care summary** button (chart icon) in the bottom bar → **30 days**. Show the stats, "During sleep" and "Scheduled doses given". Then the key callout: *"3 of 5 seizures had a meltdown, shutdown, self-injury or anxious time logged in the 24h before."* For a child who can't say "I feel a seizure coming", that's the family's early warning. Show the Behavior section ("Often before a hard time: Sensory…"). Explain that every number traces back to a logged entry, and that EVIE shows what happened together, not what caused it. Tap **Download PDF**.
+8. **Support (30s):** Tap **More → Support and resources**. The family's programs and groups live here, with the waiver waiting-list call due today. Tap the **Start here** tab. It's written for the parent who was told "your child has a disability" and then given no support: early intervention, waivers, IEP transition plans, turning 18, social groups. Each item links to an official source.
 9. **Why (20s):** Built from my family's experience with my sister, and shaped by talking to other families.
 
 ## Smoke test after every deploy
@@ -43,6 +43,8 @@
 - [ ] Schedule: add a shift covering now → the banner shows "Scheduled: … until …"; the EVV notice is at the top.
 - [ ] Try saving "Medicaid ID 12345678901" in the care plan → refused with the explanation.
 - [ ] Support: save a guide item, add a resource with a next step due today → Follow up card shows on the timeline.
+- [ ] The bottom bar shows on every screen except the seizure timer; More → Appearance → Light / Dark switches the mode, and each color palette (Lavender, Soft blue, Sage, Soft pink, Earth) works in both.
+- [ ] Attach a photo and a PDF to a note → both show on the entry; in Care plan → Documents, add a PDF → it shows in Emergency info; on the second phone it says "Saved on …'s phone".
 - [ ] Care summary 7/30/90 → **Download PDF** and **CSV** open correctly; **Print** preview works.
 - [ ] Airplane mode → log an entry → back online → it syncs.
 - [ ] Over HTTPS: "Add to Home Screen" works and the app opens from the icon.

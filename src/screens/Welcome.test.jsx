@@ -17,6 +17,14 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+it('opens on the E.V.I.E. name, what it stands for, and the two ways in', () => {
+  render(<Welcome uid="u1" onJoined={vi.fn()} />);
+  expect(screen.getByRole('heading', { level: 1, name: 'E.V.I.E.' })).toBeTruthy();
+  expect(document.querySelector('.welcome-sub').textContent).toBe('Event Video & Information Exchange');
+  expect(screen.getByRole('button', { name: 'Start a care circle' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Join with a code' })).toBeTruthy();
+});
+
 it('tells the user they are offline instead of hanging on "Creating…"', () => {
   goOffline();
   render(<Welcome uid="u1" onJoined={vi.fn()} />);

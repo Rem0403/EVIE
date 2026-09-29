@@ -1,29 +1,54 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../data/entries.js', () => ({ addEntry: vi.fn(() => 'n1') }));
-vi.mock('../data/clips.js', () => ({ attachMedia: vi.fn(() => Promise.reject(new Error('network'))) }));
+vi.mock('../lib/attachments.js', async (orig) => ({ ...(await orig()), saveAttachments: vi.fn() }));
 
 import QuickLog from './QuickLog.jsx';
 import { addEntry } from '../data/entries.js';
+import { saveAttachments } from '../lib/attachments.js';
+
+URL.createObjectURL = vi.fn(() => 'blob:x');
+URL.revokeObjectURL = vi.fn();
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
 
-it('does not offer Save again after the note saved but its photo failed', async () => {
-  render(<QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="note" entries={[]} onDone={vi.fn()} />);
-  fireEvent.change(document.querySelector('textarea'), { target: { value: 'Rash on arm' } });
-  fireEvent.change(document.querySelector('input[type=file]'), {
-    target: { files: [new File(['x'], 'rash.png', { type: 'image/png' })] },
-  });
-  fireEvent.click(screen.getByText('Save'));
+const note = () => render(<QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="note" entries={[]} onDone={vi.fn()} />);
+const pick = (...files) => fireEvent.change(document.querySelector('input[type=file]'), { target: { files } });
 
-  expect(await screen.findByText("Couldn't save the photo on this phone. The note is saved without it.")).toBeTruthy();
+it('saves a note with several attached files, recording whose phone has them', async () => {
+  saveAttachments.mockResolvedValue([{ id: 'a1', name: 'rash.png', type: 'image/png', size: 3 }, { id: 'a2', name: 'letter.pdf', type: 'application/pdf', size: 5 }]);
+  note();
+  fireEvent.change(document.querySelector('textarea'), { target: { value: 'Rash on arm' } });
+  pick(new File(['abc'], 'rash.png', { type: 'image/png' }), new File(['hello'], 'letter.pdf', { type: 'application/pdf' }));
+  expect(screen.getByText('letter.pdf')).toBeTruthy();
+  fireEvent.click(screen.getByText('Save'));
+  await waitFor(() => expect(addEntry).toHaveBeenCalledTimes(1));
+  expect(addEntry.mock.calls[0][1]).toMatchObject({ type: 'note', note: 'Rash on arm', attachmentsOn: 'Remy', attachments: [{ id: 'a1' }, { id: 'a2' }] });
+});
+
+it('saves the note without the files, once, if the phone cannot store them', async () => {
+  saveAttachments.mockRejectedValue(new Error('quota'));
+  note();
+  fireEvent.change(document.querySelector('textarea'), { target: { value: 'Rash on arm' } });
+  pick(new File(['abc'], 'rash.png', { type: 'image/png' }));
+  fireEvent.click(screen.getByText('Save'));
+  expect(await screen.findByText(/Couldn.t save the files on this phone/)).toBeTruthy();
   expect(screen.queryByText('Save')).toBeNull();
   expect(addEntry).toHaveBeenCalledTimes(1);
+  expect(addEntry.mock.calls[0][1]).not.toHaveProperty('attachments');
+});
+
+it('accepts a note that is only an attachment', async () => {
+  saveAttachments.mockResolvedValue([{ id: 'a1', name: 'plan.pdf', type: 'application/pdf', size: 5 }]);
+  note();
+  pick(new File(['hello'], 'plan.pdf', { type: 'application/pdf' }));
+  fireEvent.click(screen.getByText('Save'));
+  await waitFor(() => expect(addEntry).toHaveBeenCalled());
 });
 
 it('logs a behavior with what came before, what helped, length and intensity', () => {

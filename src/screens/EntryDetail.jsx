@@ -4,6 +4,7 @@ import { validateClip } from '../lib/validate.js';
 import { deleteEntry } from '../data/entries.js';
 import { attachMedia } from '../data/clips.js';
 import Media from '../components/Media.jsx';
+import AttachmentList from '../components/AttachmentList.jsx';
 import Icon from '../components/Icon.jsx';
 
 export default function EntryDetail({ circle, entry, me, onBack }) {
@@ -48,6 +49,7 @@ export default function EntryDetail({ circle, entry, me, onBack }) {
 
       <Media entry={entry} kind="clip" preload="metadata" shareable />
       <Media entry={entry} kind="photo" />
+      <AttachmentList items={entry.attachments} on={entry.attachmentsOn} />
 
       <dl className="detail-rows card">
         {detailRows(entry).map(([label, value]) => (

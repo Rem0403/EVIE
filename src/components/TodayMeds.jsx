@@ -12,9 +12,9 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
 
   if (!circle.meds?.length) {
     return (
-      <button className="summary-card block-soft" onClick={onSetUp}>
+      <button className="summary-card feature compact tint-med" onClick={onSetUp}>
         <span className="card-head">
-          <span className="card-label tc-med"><Icon name="med" size={18} />Medications</span>
+          <span className="card-label"><Icon name="med" size={18} />Medications</span>
           <Icon name="chevron" size={18} />
         </span>
         <span className="card-value sm">Add the daily medication schedule</span>
@@ -42,22 +42,35 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
     });
   }
 
+  const missed = rows.filter((r) => r.state === 'missed').length;
+  const due = next?.state === 'due';
+  const headline = !next
+    ? `✓ All ${rows.length} doses logged today`
+    : due
+      ? `${formatSlot(next.slot)} ${next.med.name} is due`
+      : `${given} of ${rows.length} given · next ${formatSlot(next.slot)}`;
+
+  // In the medication color. Size follows what needs doing: big with a strong outline while a dose
+  // is due, one calm line otherwise.
   return (
-    <section className="summary-card block-soft" aria-labelledby="today-meds-title">
+    <section className={`summary-card feature tint-med ${due ? 'due' : 'compact'}`} aria-labelledby="today-meds-title">
       <span className="card-head">
-        <span className="card-label tc-med" id="today-meds-title"><Icon name="med" size={18} />Medications</span>
+        <span className="card-label" id="today-meds-title"><Icon name="med" size={18} />Medications</span>
         <span className="card-time">Today</span>
       </span>
-      <span className="card-value">{given} of {rows.length} given</span>
-      {!next && !showAll && <span className="card-sub">Every dose today is logged.</span>}
+      <span className={due ? 'card-value' : 'card-value sm'}>{headline}</span>
+      {missed > 0 && <span className="card-sub">{missed} missed today</span>}
       {shown.map((row) => {
         const { med, slot, entry, state } = row;
         return (
           <div key={`${med.name}@${slot}`} className={`dose dose-${state}`}>
-            <div className="dose-what">
-              <span className="dose-time">{formatSlot(slot)}</span>
-              <span>{[med.name, med.dose].filter(Boolean).join(' · ')}</span>
-            </div>
+            {/* When only the due dose is shown, the headline already names it. */}
+            {(showAll || !due) && (
+              <div className="dose-what">
+                <span className="dose-time">{formatSlot(slot)}</span>
+                <span>{[med.name, med.dose].filter(Boolean).join(' · ')}</span>
+              </div>
+            )}
             {entry ? (
               <span className="dose-status">
                 {state === 'given' ? '✓ Given' : 'Missed'} · {entry.createdByName || 'someone'}
@@ -65,7 +78,7 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
               </span>
             ) : (
               <div className="dose-actions">
-                {state === 'due' && <span className="dose-due">Due</span>}
+                {state === 'due' && <span className="due-badge">Due</span>}
                 <button className="btn small primary" onClick={() => log(row, 'given')}
                   aria-label={`${med.name} ${formatSlot(slot)} given`}>Given</button>
                 <button className="btn small" onClick={() => log(row, 'missed')}
@@ -77,7 +90,7 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
       })}
       {rows.length > 1 && (
         <button className="card-action link-btn" onClick={() => setShowAll(!showAll)} aria-expanded={showAll}>
-          {showAll ? 'Show less' : `All of today’s doses (${rows.length})`}
+          {showAll ? 'Show less' : `All of today’s doses (${rows.length})`}<Icon name="chevron" size={16} />
         </button>
       )}
     </section>

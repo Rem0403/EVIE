@@ -15,7 +15,10 @@ export default function EntryCard({ entry, onClick }) {
           <span className="card-time">{formatTime(entry.occurredAt)}<Icon name="chevron" size={14} /></span>
         </span>
         <span className="card-value sm">{entryTitle(entry)}</span>
-        <span className="entry-meta">Logged by {entry.createdByName || 'someone'}</span>
+        <span className="entry-meta">
+          Logged by {entry.createdByName || 'someone'}
+          {entry.attachments?.length > 0 && ` · ${entry.attachments.length} file${entry.attachments.length > 1 ? 's' : ''}`}
+        </span>
         {uploading && <span className="entry-meta">Saving…</span>}
         {failed && <span className="entry-warn">Clip or photo not saved. Tap to retry.</span>}
       </button>

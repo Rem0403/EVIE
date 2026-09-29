@@ -37,7 +37,9 @@ describe('buildSummaryPdf', () => {
     expect(out).toContain('Diagnoses: Epilepsy, Autism, CDKL5');
     expect(out).toContain('No behavior logged in this range.');
     expect(out).toContain('Illness x1');
-    expect(out).toContain('5 min or longer: 1');
+    expect(out).toContain('5 min or longer');
+    expect(out).toContain('(5 min or longer)'); // the 320s seizure is flagged on its card
+    expect(out).toMatch(/Page 1 of [0-9]/);
     expect(out).toContain('Tired after - slept 2h'); // dashes the built-in font can't draw are swapped
     expect(out).not.toMatch(/\(\? /); // no line starts with a "?" from an undrawable character
   });

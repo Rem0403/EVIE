@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateClip, validatePhoto, videoTypeOf, MAX_CLIP_BYTES, MAX_PHOTO_BYTES } from './validate.js';
+import { validateClip, videoTypeOf, MAX_CLIP_BYTES } from './validate.js';
 
 describe('validateClip', () => {
   it('accepts a normal video', () => {
@@ -31,10 +31,3 @@ describe('videoTypeOf', () => {
   it('returns null for non-videos', () => expect(videoTypeOf({ type: '', name: 'clip' })).toBeNull());
 });
 
-describe('validatePhoto', () => {
-  it('accepts an image', () => expect(validatePhoto({ type: 'image/png', size: 100 })).toBeNull());
-  it('rejects a non-image', () => expect(validatePhoto({ type: 'video/mp4', size: 100 })).toBe("That file isn't a photo."));
-  it('rejects an oversized photo', () => {
-    expect(validatePhoto({ type: 'image/jpeg', size: MAX_PHOTO_BYTES + 1 })).toBe('That photo is too large (max 10 MB).');
-  });
-});

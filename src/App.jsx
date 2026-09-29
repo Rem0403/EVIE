@@ -6,6 +6,8 @@ import { subscribeResources } from './data/resources.js';
 import { clearSession, loadSession, saveSession } from './lib/session.js';
 import { loadSeizureDraft } from './lib/seizureDraft.js';
 import OfflineBanner from './components/OfflineBanner.jsx';
+import AppNav from './components/AppNav.jsx';
+import { scrollToTop } from './lib/scroll.js';
 import Welcome from './screens/Welcome.jsx';
 import Timeline from './screens/Timeline.jsx';
 import LogSeizure from './screens/LogSeizure.jsx';
@@ -161,7 +163,7 @@ export default function App() {
         body = <Emergency circle={circle} onBack={home} onEditPlan={() => go({ name: 'careplan' })} />;
         break;
       case 'careplan':
-        body = <CarePlan circle={circle} onDone={home} />;
+        body = <CarePlan circle={circle} me={me} onDone={home} />;
         break;
       case 'summary':
         body = (
@@ -183,26 +185,41 @@ export default function App() {
             entries={entries}
             resources={resources}
             loading={!entriesLoaded}
-            demo={DEMO}
             onOpen={(id) => go({ name: 'detail', id })}
-            onLogSeizure={() => go({ name: 'seizure' })}
-            onQuickLog={(type) => go({ name: 'quick', type })}
-            onSummary={() => go({ name: 'summary' })}
             onCarePlan={() => go({ name: 'careplan' })}
-            onSupport={() => go({ name: 'support' })}
             onEmergency={() => go({ name: 'emergency' })}
             onSchedule={() => go({ name: 'schedule' })}
             onOpenResource={(id) => go({ name: 'resource', id })}
-            onLeave={leaveCircle}
           />
         );
     }
   }
 
+  // The nav is on every screen once in a circle, except while timing a seizure.
+  const showNav = circle && screen.name !== 'seizure';
+  // Any screen name the switch above doesn't handle falls through to the timeline (home).
+  const atHome = !['seizure', 'quick', 'detail', 'support', 'resource', 'schedule', 'emergency', 'careplan', 'summary'].includes(screen.name);
   return (
     <>
       <OfflineBanner />
-      <main className={`app${screen.name === 'timeline' && circle ? ' app-home' : ''}`}>{body}</main>
+      <main className={`app${atHome && circle ? ' app-home' : ''}${showNav ? ' app-nav' : ''}`}>{body}</main>
+      {showNav && (
+        <AppNav
+          circle={circle}
+          me={me}
+          resources={resources}
+          demo={DEMO}
+          active={screen.name === 'summary' ? 'summary' : atHome ? 'home' : null}
+          onHome={() => { setScreen({ name: 'timeline' }); scrollToTop(); }}
+          onSummary={() => go({ name: 'summary' })}
+          onSeizure={() => go({ name: 'seizure' })}
+          onQuickLog={(type) => go({ name: 'quick', type })}
+          onCarePlan={() => go({ name: 'careplan' })}
+          onSchedule={() => go({ name: 'schedule' })}
+          onSupport={() => go({ name: 'support' })}
+          onLeave={leaveCircle}
+        />
+      )}
     </>
   );
 }

@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom/client';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { missingConfig } from './lib/config.js';
 import './styles.css';
+import { applyPalette, applyTheme, loadPalette, loadTheme } from './lib/theme.js';
+
+// Apply the saved Light / Dark choice before the first paint, so the wrong theme never flashes.
+applyTheme(loadTheme());
+applyPalette(loadPalette());
 
 // Offline app shell and home-screen install. Dev skips it so edits always show.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

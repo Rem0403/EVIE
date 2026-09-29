@@ -16,24 +16,43 @@ export default function Handoff({ circle, me, entries, now = Date.now() }) {
   const current = currentHandoff(entries);
   const ended = current?.until && current.until < now;
   const mine = current?.createdBy === me.uid && !ended;
+  const active = current && !ended;
+  const schedule = (
+    <>
+      {scheduled.map(({ shift, until }, i) => (
+        <span key={i} className="card-sub">Scheduled: {shift.name} until {formatTime(until)}</span>
+      ))}
+      {next && <span className="card-sub">Next today: {next.shift.name} at {formatTime(next.from)}</span>}
+    </>
+  );
 
+  // Big (the hero) only while someone is actually with them; otherwise a compact row.
   return (
     <>
-      <button className="summary-card block-hero" onClick={() => setOpen(true)}>
-        <span className="card-head">
-          <span className="card-label tc-handoff"><Icon name="handoff" size={18} />Who’s with {circle.personName}</span>
-          {current && <span className="card-time">since {when(current.occurredAt, now)}</span>}
-        </span>
-        <span className="card-value">{current ? `${ended ? 'Was with' : 'With'} ${current.createdByName || 'someone'}` : 'No one yet'}</span>
-        {current?.until && <span className="card-sub">until {when(current.until, now)}</span>}
-        {current?.note && <span className="card-sub handoff-note">“{current.note}”</span>}
-        {!current && <span className="card-sub">Taking over? Let everyone know you’re with {circle.personName}.</span>}
-        {scheduled.map(({ shift, until }, i) => (
-          <span key={i} className="card-sub">Scheduled: {shift.name} until {formatTime(until)}</span>
-        ))}
-        {next && <span className="card-sub">Next today: {next.shift.name} at {formatTime(next.from)}</span>}
-        <span className="pill-inline">{mine ? 'Update' : 'Take over'}<Icon name="chevron" size={16} /></span>
-      </button>
+      {active ? (
+        <button className="summary-card block-hero feature" onClick={() => setOpen(true)}>
+          <span className="card-head">
+            <span className="card-label">Who’s with {circle.personName}</span>
+            <span className="card-time">since {when(current.occurredAt, now)}</span>
+          </span>
+          <span className="card-value">With {current.createdByName || 'someone'}</span>
+          {current.until && <span className="card-sub">until {when(current.until, now)}</span>}
+          {current.note && <span className="card-sub handoff-note">“{current.note}”</span>}
+          {schedule}
+          <span className="card-action">{mine ? 'Update' : 'Take over'}<Icon name="chevron" size={16} /></span>
+        </button>
+      ) : (
+        <button className="summary-card feature compact" onClick={() => setOpen(true)}>
+          <span className="card-head">
+            <span className="card-label">Who’s with {circle.personName}</span>
+          </span>
+          <span className="card-sub">
+            {current ? `Was with ${current.createdByName || 'someone'} until ${when(current.until, now)}` : 'No one has taken over yet.'}
+          </span>
+          {schedule}
+          <span className="card-action">Take over<Icon name="chevron" size={16} /></span>
+        </button>
+      )}
       {open && <TakeOverSheet circle={circle} me={me} entries={entries} current={current} onClose={() => setOpen(false)} />}
     </>
   );

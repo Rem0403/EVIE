@@ -1,5 +1,4 @@
 export const MAX_CLIP_BYTES = 100 * 1024 * 1024;
-export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 const VIDEO_TYPES = {
   mp4: 'video/mp4',
@@ -21,12 +20,5 @@ export function validateClip(file) {
   if (!file) return 'No file selected.';
   if (!videoTypeOf(file)) return "That file isn't a video.";
   if (file.size > MAX_CLIP_BYTES) return 'That clip is too large (max 100 MB). Trim it to just the seizure and try again.';
-  return null;
-}
-
-export function validatePhoto(file) {
-  if (!file) return 'No file selected.';
-  if (!file.type?.startsWith('image/')) return "That file isn't a photo.";
-  if (file.size > MAX_PHOTO_BYTES) return 'That photo is too large (max 10 MB).';
   return null;
 }

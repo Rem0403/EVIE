@@ -84,6 +84,11 @@ describe('circle changes', () => {
       schedule: [{ name: 'Ms. Lee', days: [1, 3], start: '08:00', end: '15:00', note: '' }],
     }));
   });
+  it('lets a member update the documents list', async () => {
+    await assertSucceeds(updateDoc(doc(as('bob'), 'circles/c1'), {
+      documents: [{ id: 'd1', name: 'Seizure plan.pdf', type: 'application/pdf', size: 1024, on: 'Bob' }],
+    }));
+  });
   it("stops a stranger editing the care plan", async () => {
     await assertFails(updateDoc(doc(as('eve'), 'circles/c1'), { meds: [] }));
   });

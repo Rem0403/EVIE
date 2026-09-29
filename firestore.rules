@@ -27,7 +27,7 @@ service cloud.firestore {
         // Members may edit the care plan and schedule, rename or replace the code, but not change who is in the circle.
         (
           request.auth.uid in resource.data.memberIds
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile', 'schedule'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile', 'schedule', 'documents'])
         )
         || (
           // Joining: add only yourself, proving you know the current code through the

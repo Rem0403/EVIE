@@ -4,6 +4,9 @@ import { COMMUNICATION, DIAGNOSES } from '../lib/format.js';
 import { cleanMeds } from '../lib/meds.js';
 import { cleanContacts, CONTACT_ROLES, planIdError } from '../lib/careplan.js';
 import { updateCircle } from '../data/circles.js';
+import AttachmentUpload from '../components/AttachmentUpload.jsx';
+import AttachmentList from '../components/AttachmentList.jsx';
+import { removeAttachment, saveAttachments } from '../lib/attachments.js';
 
 const blankMed = () => ({ name: '', dose: '', times: ['08:00'], purpose: '', notes: '' });
 const blankContact = () => ({ name: '', role: 'family', phone: '' });
@@ -12,7 +15,7 @@ const planKey = (c) => JSON.stringify([c.profile || null, c.meds || null], (_, v
   (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v));
 
 // "About {name}": emergency details, diagnoses, how they communicate, what helps, and the daily medication schedule.
-export default function CarePlan({ circle, onDone }) {
+export default function CarePlan({ circle, me, onDone }) {
   const profile = circle.profile || {};
   const [diagnoses, setDiagnoses] = useState(profile.diagnoses || []);
   const [diagnosisOther, setDiagnosisOther] = useState(profile.diagnosisOther || '');
@@ -25,6 +28,9 @@ export default function CarePlan({ circle, onDone }) {
   const [contacts, setContacts] = useState(() => (profile.contacts || []).map((c) => ({ ...c })));
   const [meds, setMeds] = useState(() => (circle.meds || []).map((m) => ({ ...m, times: [...m.times] })));
   const [error, setError] = useState('');
+  const [documents, setDocuments] = useState(() => circle.documents || []);
+  const [newFiles, setNewFiles] = useState([]);
+  const [removedDocs, setRemovedDocs] = useState([]);
   // The plan as it was when this form opened, to notice someone else saving in the meantime.
   const [openedWith] = useState(() => planKey(circle));
   const [conflict, setConflict] = useState(false);
@@ -32,7 +38,7 @@ export default function CarePlan({ circle, onDone }) {
   const setMed = (i, patch) => setMeds((all) => all.map((m, j) => (j === i ? { ...m, ...patch } : m)));
   const setContact = (i, patch) => setContacts((all) => all.map((c, j) => (j === i ? { ...c, ...patch } : c)));
 
-  function save(e) {
+  async function save(e) {
     e.preventDefault();
     const [cleaned, err] = cleanMeds(meds);
     const [cleanedContacts, contactErr] = cleanContacts(contacts);
@@ -58,7 +64,17 @@ export default function CarePlan({ circle, onDone }) {
       setConflict(true);
       return;
     }
-    updateCircle(circle.id, { profile: next, meds: cleaned }).catch((err2) => console.error('care plan save failed', err2));
+    let added = [];
+    try {
+      added = await saveAttachments(newFiles);
+    } catch (storeErr) {
+      console.error(storeErr);
+      setError('Couldn\u2019t save the new documents on this phone (it may be out of space). Nothing was saved; try again.');
+      return;
+    }
+    removedDocs.forEach((d) => removeAttachment(d.id));
+    const docs = [...documents, ...added.map((d) => ({ ...d, on: me?.name || 'someone' }))];
+    updateCircle(circle.id, { profile: next, meds: cleaned, documents: docs }).catch((err2) => console.error('care plan save failed', err2));
     onDone();
   }
 
@@ -99,6 +115,15 @@ export default function CarePlan({ circle, onDone }) {
         </fieldset>
       ))}
       <button type="button" className="btn" onClick={() => setContacts((all) => [...all, blankContact()])}>+ Add contact</button>
+
+      <h2>Documents</h2>
+      <p className="muted small">The doctor’s seizure plan, letters, the IEP, test results. Everyone sees the list; each file stays on the phone that added it and can be shared from there.</p>
+      <AttachmentList
+        items={documents}
+        label="Care plan documents"
+        onRemove={(d) => { setDocuments(documents.filter((x) => x.id !== d.id)); setRemovedDocs([...removedDocs, d]); }}
+      />
+      <AttachmentUpload files={newFiles} onChange={setNewFiles} existingCount={documents.length} label="New documents" />
 
       <h2>Diagnoses</h2>
       <ChipGroup options={DIAGNOSES} value={diagnoses} onChange={setDiagnoses} multi />

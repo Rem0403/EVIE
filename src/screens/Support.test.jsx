@@ -38,6 +38,7 @@ it('lists resources with an overdue next step and tappable contact links', () =>
 it('marks guide items already saved, and saves others prefilled', () => {
   const onAdd = vi.fn();
   render(<Support circle={circle} resources={[waiver]} onBack={vi.fn()} onAdd={onAdd} onEdit={vi.fn()} />);
+  fireEvent.click(screen.getByRole('tab', { name: 'Start here' }));
   expect(screen.getByText('✓ In our resources')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Save Call or text 211 to our resources' }));
   expect(onAdd).toHaveBeenCalledWith({ name: 'Call or text 211', category: 'services', url: 'https://www.211.org/' });
@@ -82,4 +83,10 @@ it('shows follow-ups due today or earlier on the timeline', () => {
   expect(screen.queryByText('Later')).toBeNull();
   fireEvent.click(screen.getByText('Call about the waiting list'));
   expect(onOpen).toHaveBeenCalledWith('r1');
+});
+
+it('opens on the guide for a family with nothing saved yet', () => {
+  render(<Support circle={circle} resources={[]} onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
+  expect(screen.getByRole('tab', { name: 'Start here' }).getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByRole('tabpanel', { name: 'Start here' })).toBeTruthy();
 });

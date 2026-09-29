@@ -78,6 +78,11 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 
 **A hand-written service worker, with no PWA plugin.** Revisitable if offline caching needs to go further. 2026-09-27.
 - **Tradeoffs:** Offline works from the second launch, not the first.
+- **Caching (2026-09-29):** `firebase.json` sends `no-cache` for pages and `sw.js`, and a one-year immutable cache for hashed `/assets/`. Firebase's default one-hour cache kept phones on an old version after a deploy.
+
+**Sliding tabs (`components/Tabs.jsx`), adapted from beui.dev's tabs in plain CSS, with no motion, lucide or Tailwind.** Final. 2026-09-29.
+- **Why:** The Care summary's date range and Support's two sections are views of one screen, so they should read as tabs rather than filters. The component follows the ARIA tabs pattern: arrow keys, Home and End, and each tab linked to its panel.
+- **Tradeoffs:** The highlight slides in 200ms with an even ease-in-out (the app's shared ease made it look like a jump), with no spring and no overflow arrows, and it's off under reduce motion. The bottom nav's highlight circle uses the same slide between Home and Care summary, and fades out on other screens. Appearance mode (System / Light / Dark) uses the same control with `radio`, so screen readers hear a choice rather than tabs. Form choices and the timeline filters stay as chips, because they can pick several or filter a list.
 
 ## Product and content
 
@@ -98,6 +103,44 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 
 **UI follows Yoo et al. 2020 (usability study of an epilepsy app).** Final. 2026-09-27.
 - **Rules:** Main tasks are one tap from home. Detailed seizure entry is guided, one question at a time. Visuals stay calm.
+
+**Palette: epilepsy purple + autism gold.** Final. 2026-09-28.
+- **Why:** Purple is the epilepsy awareness color (Purple Day). Gold ("Au") is the autism color many autistic advocates prefer.
+- **Alternatives:** The red/yellow/blue/green "autism color palette". It matches the 1999 puzzle-piece awareness ribbon, which Wikipedia notes "is controversial among autism advocates and rejected by many".
+- **Tradeoffs:** Gold is less widely recognized by the general public than the puzzle ribbon.
+
+**Seizure drafts are kept in localStorage, with a 12-hour expiry.** Final. 2026-09-28.
+- **Why:** sessionStorage is lost when a phone closes the app, which often happens while the camera is open to film a seizure.
+- **What's kept:** the timer and every answer given after Stop.
+
+**The bottom nav is on every screen except the seizure timer. The theme can be System, Light or Dark.** Final. 2026-09-28.
+- **How it works:** the theme choice is stored per phone and applied before the first paint.
+
+**Soothing color palettes as a per-phone setting.** Final. 2026-09-28.
+- **Options:** Lavender (the default), Soft blue, Sage, Soft pink and Earth, each in light and dark.
+- **What changes:** only neutral surfaces, links, the hero card and the nav.
+- **What never changes:** meaning colors, meaning seizure purple, emergency red, gold, and the entry types.
+- **How it's built:** the palette CSS is generated from the contrast-checked values.
+
+**Smooth scrolling for in-app jumps only, using the browser's own smooth scroll.** Final. 2026-09-28.
+- **Where it applies:** a stat tile down to the timeline, and Home back to the top. Off under reduce motion.
+- **Why not Lenis:** it takes over wheel scrolling (about 1.2s), does nothing on phones, needs two packages, and can trigger motion sickness.
+- **Tradeoffs:** the glide takes roughly 300–500ms, a documented exception to the 200ms animation rule, allowed because it only follows the person's own tap.
+
+**Attachments stay on the phone that added them, like clips.** Final. 2026-09-29.
+- **How it works:** notes hold several files, and the care plan has a Documents list. Firestore stores only the name, type, size and whose phone has each file.
+- **What was left out:** the reference component's simulated upload progress (nothing is uploaded), its audio and link attachments, and its spinner and spring animations.
+- **Tradeoffs:** other caregivers see the list and ask the owner to share the file.
+
+**Lexend is the only UI font, bundled with the app.** Final. 2026-09-29.
+- **Why:** Guidance for autism, dyslexia and photosensitive epilepsy favors clean sans-serifs with consistent strokes and no crowding. Lexend was designed for that.
+- **How it's bundled:** served by EVIE itself under the SIL Open Font License (`src/assets/fonts/Lexend-OFL.txt`), falling back to Verdana, then Arial.
+- **Also changed:**
+  - No serifs, italics or negative tracking.
+  - Line height 1.5.
+  - No small all-caps.
+  - The timer uses fixed-width Verdana/Arial digits.
+- **Alternatives:** Verdana/Arial only (no download, but Android has neither and falls back to Roboto), and the old system fonts plus serif titles.
 
 ## Process
 

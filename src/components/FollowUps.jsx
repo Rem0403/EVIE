@@ -6,10 +6,10 @@ export default function FollowUps({ resources, now = Date.now(), onOpen }) {
   const due = dueFollowUps(resources, now);
   if (!due.length) return null;
   return (
-    <section className="summary-card block-lime tabbed" aria-labelledby="follow-ups-title">
-      <span className="tab" aria-hidden="true">Due</span>
+    <section className="summary-card block-gold feature" aria-labelledby="follow-ups-title">
       <span className="card-head">
         <span className="card-label" id="follow-ups-title"><Icon name="flag" size={18} />Follow up</span>
+        <span className="card-time">Due</span>
       </span>
       {due.map((r) => (
         <button key={r.id} className="list-row follow-up" onClick={() => onOpen(r.id)}>

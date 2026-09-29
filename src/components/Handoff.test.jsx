@@ -51,5 +51,5 @@ it('names the day for a handoff from before today', () => {
 it('marks a handoff whose time has run out', () => {
   vi.setSystemTime(at(16));
   render(<Handoff circle={circle} me={me} entries={[momHandoff]} />);
-  expect(screen.getByText('Was with Mom')).toBeTruthy();
+  expect(screen.getByText(/Was with Mom until 3:00 PM/)).toBeTruthy();
 });

@@ -48,7 +48,7 @@ export function deleteEntry(circleId, id) {
 // Enough for the longest summary (90 days) plus the 90 days before it that it's compared with.
 // ponytail: whole window loads on open (~5 entries/day ≈ 1,000 reads); add "load older" paging
 // if families need the timeline past 200 days or the free-plan read quota gets tight.
-export const HISTORY_DAYS = 200;
+const HISTORY_DAYS = 200;
 
 export function subscribeEntries(circleId, onChange, onError) {
   const since = Timestamp.fromMillis(Date.now() - HISTORY_DAYS * 24 * 3600 * 1000);

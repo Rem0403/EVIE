@@ -21,15 +21,16 @@ export default function LogSeizure({ circle, me, onDone }) {
   const saving = useRef(false);
 
   // Details after Stop are asked one step at a time; null means not answered yet.
-  const [step, setStep] = useState(1);
+  // Answers come back from the draft, so leaving to film a clip doesn't lose them.
+  const [step, setStep] = useState(draft?.step ?? 1);
   const [showInfo, setShowInfo] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
   const stepHeading = useRef(null);
-  const [seizureType, setSeizureType] = useState(null);
-  const [rescue, setRescue] = useState(null);
-  const [triggers, setTriggers] = useState([]);
-  const [duringSleep, setDuringSleep] = useState(false);
-  const [note, setNote] = useState('');
+  const [seizureType, setSeizureType] = useState(draft?.seizureType ?? null);
+  const [rescue, setRescue] = useState(draft?.rescue ?? null);
+  const [triggers, setTriggers] = useState(draft?.triggers ?? []);
+  const [duringSleep, setDuringSleep] = useState(draft?.duringSleep ?? false);
+  const [note, setNote] = useState(draft?.note ?? '');
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [progress, setProgress] = useState(null);
@@ -42,8 +43,8 @@ export default function LogSeizure({ circle, me, onDone }) {
   }, [stopMs]);
 
   useEffect(() => {
-    if (!saving.current) saveSeizureDraft({ startMs, stopMs });
-  }, [startMs, stopMs]);
+    if (!saving.current) saveSeizureDraft({ startMs, stopMs, step, seizureType, rescue, triggers, duringSleep, note });
+  }, [startMs, stopMs, step, seizureType, rescue, triggers, duringSleep, note]);
 
   // Move focus to each step's question so screen readers announce it.
   useEffect(() => {

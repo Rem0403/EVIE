@@ -4,10 +4,10 @@ import {
   BEHAVIOR_BEFORE, BEHAVIOR_HELPED, BEHAVIOR_KINDS, BEHAVIOR_LENGTH, defaultSleepTimes, fromLocalInput, INTENSITY,
   MED_STATUS, SLEEP_QUALITY, toLocalInput, TYPE_META,
 } from '../lib/format.js';
-import { validatePhoto } from '../lib/validate.js';
 import { addEntry } from '../data/entries.js';
-import { attachMedia } from '../data/clips.js';
 import Icon from '../components/Icon.jsx';
+import AttachmentUpload from '../components/AttachmentUpload.jsx';
+import { saveAttachments } from '../lib/attachments.js';
 import { findIdNumber, ID_NUMBER_MESSAGE } from '../lib/privacy.js';
 
 export default function QuickLog({ circle, me, type, entries, onDone }) {
@@ -30,7 +30,7 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
   // A good day has no before / what helped; the details are only for when they were struggling.
   const details = kind !== 'good_day';
   const [note, setNote] = useState('');
-  const [photo, setPhoto] = useState(null);
+  const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(null);
   const [savedWithError, setSavedWithError] = useState('');
@@ -64,17 +64,8 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
         intensity: intensity || undefined,
       }];
     }
-    if (!note.trim() && !photo) return [null, 'Write a note or add a photo.'];
-    return [{ ...base, occurredAt, photoStatus: photo ? 'uploading' : undefined }];
-  }
-
-  function pickPhoto(e) {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
-    const err = validatePhoto(f);
-    setError(err || '');
-    setPhoto(err ? null : f);
+    if (!note.trim() && !files.length) return [null, 'Write a note or attach a file.'];
+    return [{ ...base, occurredAt }];
   }
 
   async function save(e) {
@@ -84,19 +75,23 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
       setError(err);
       return;
     }
-    const id = addEntry(circle.id, entry);
-    if (!photo) {
+    if (!files.length) {
+      addEntry(circle.id, entry);
       onDone();
       return;
     }
     setProgress(0);
+    let attachments = [];
+    let failed = false;
     try {
-      await attachMedia(circle.id, id, photo, 'photo', setProgress);
-      onDone();
-    } catch (uploadErr) {
-      console.error(uploadErr);
-      setSavedWithError("Couldn't save the photo on this phone. The note is saved without it.");
+      attachments = await saveAttachments(files);
+    } catch (storeErr) {
+      console.error(storeErr);
+      failed = true;
     }
+    addEntry(circle.id, attachments.length ? { ...entry, attachments, attachmentsOn: me.name } : entry);
+    if (failed) setSavedWithError("Couldn't save the files on this phone (it may be out of space). The note is saved without them.");
+    else onDone();
   }
 
   const meta = TYPE_META[type];
@@ -175,12 +170,7 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
         <textarea value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
 
-      {type === 'note' && (
-        <label className="btn" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-          <Icon name="photo" /> {photo ? `Photo: ${photo.name}` : 'Add photo'}
-          <input type="file" accept="image/*" onChange={pickPhoto} hidden />
-        </label>
-      )}
+      {type === 'note' && <AttachmentUpload files={files} onChange={setFiles} />}
 
       {error && <p className="error">{error}</p>}
       {progress !== null && <progress value={progress} max={1} />}

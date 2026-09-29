@@ -4,8 +4,21 @@ import { normalizeJoinCode } from '../lib/codes.js';
 import { shareJoinCode, shareMessage } from '../lib/share.js';
 import { withTimeout } from '../lib/timeout.js';
 import { useFlash } from '../lib/useFlash.js';
+import Icon from '../components/Icon.jsx';
 
 const NETWORK_TIMEOUT_MS = 15000;
+// Each letter and its word share an entry-type color. No purple: that's only ever the seizure color.
+const NAME = [
+  ['E', 'Event', 'med'],
+  ['V', 'Video', 'sleep'],
+  ['I', 'Information', 'behavior'],
+  ['E', 'Exchange', 'handoff'],
+];
+const POINTS = [
+  ['seizure', 'Seizures', 'Time them, add a video, spot patterns'],
+  ['med', 'Medications', 'Today’s doses, given or missed'],
+  ['behavior', 'Everyone in the loop', 'Behavior, handoffs, the care plan and support'],
+];
 const OFFLINE = "You're offline. Connect to the internet and try again.";
 
 export default function Welcome({ uid, onJoined }) {
@@ -123,8 +136,26 @@ export default function Welcome({ uid, onJoined }) {
 
   return (
     <section className="stack welcome">
-      <div className="brand">EVIE</div>
-      <p className="lead">One shared record for everyone who cares for them: seizures, medications, behavior, who’s with them, and where to find support.</p>
+      <header className="welcome-hero">
+        <span className="welcome-mark" aria-hidden="true"><Icon name="seizure" size={38} /></span>
+        <h1 className="welcome-title">
+          {NAME.map(([letter, , color]) => <span key={color} className={`c-${color}`}>{letter}.</span>)}
+        </h1>
+        <p className="welcome-sub">
+          {NAME.map(([, word, color], i) => (
+            <span key={color}>{i === 2 && '& '}<span className={`c-${color}`}>{word}</span>{i < 3 && ' '}</span>
+          ))}
+        </p>
+      </header>
+      <p className="lead">One shared record for everyone who cares for them.</p>
+      <ul className="welcome-points" aria-label="What EVIE keeps">
+        {POINTS.map(([type, title, text]) => (
+          <li key={type} className={`type-${type}`}>
+            <span className="welcome-icon" aria-hidden="true"><Icon name={type} size={22} /></span>
+            <span><strong>{title}</strong><span className="muted small">{text}</span></span>
+          </li>
+        ))}
+      </ul>
       <button className="btn primary big" onClick={() => setMode('create')}>Start a care circle</button>
       <button className="btn big" onClick={() => setMode('join')}>Join with a code</button>
     </section>

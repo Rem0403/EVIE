@@ -76,31 +76,42 @@ EVIE sounds like a calm, experienced friend who has done this before.
 
 **Style.** Color-block cards with big serif headings, outlined pill chips and one bright call-to-action pill, based on a mental-health app concept on Dribbble (shared by Remy on 2026-09-28). Dark mode follows that reference (near-black page); light mode uses the same blocks on an off-white page. Colors are **softened** about 15–20% from the reference to stay calm for tired caregivers and people sensitive to strong visuals. We copy the pattern only, never the reference's illustrations, mascot or content.
 
-**Color.** All values are tokens in `src/styles.css`. Every text color is at least 4.5:1 (WCAG AA) on what it sits on, in both themes. Text on a color block is always full white or near-black, never dimmed.
+**Color: purple + gold.** Purple is the epilepsy awareness color (Purple Day, March 26), so it marks seizures and the Start seizure button. Gold ("Au") is the autism color that many autistic advocates prefer; EVIE uses it for accents. We deliberately avoid the red/yellow/blue/green puzzle-ribbon colors and any puzzle-piece imagery, which many autistic people reject. All values are tokens in `src/styles.css`. Every text color is at least 4.5:1 (WCAG AA) on what it sits on, in both themes, and text on a color block is always full white or near-black.
 
-| Role | Token | Use |
-|---|---|---|
-| Page, card, fill, separator | `--bg`, `--surface`, `--fill`, `--separator` | Layout |
-| Text, secondary text | `--text`, `--muted` | All copy |
-| Hero block (periwinkle) | `--hero` / `--on-hero` | The one main card on a screen (e.g. who's with them) |
-| Soft card (lavender in dark, white in light) | `--soft-card` / `--on-soft` | Everyday task cards (medications) |
-| Lime and pink blocks | `--lime`, `--pink` / `--on-block` | Folder-tab cards: Follow up (lime), Emergency (pink) |
-| Call to action (mint in dark, green in light) | `--cta` / `--on-cta` | Start seizure, and the main "do it" button on a card |
-| Section headings | `--heading-accent` | Lime in dark mode, text color in light |
-| Entry types | `--seizure`, `--med`, `--sleep`, `--behavior`, `--note`, `--handoff` | Icon, label and filter chip only |
-| Danger, due, OK | `--danger`, `--due-*`, `--ok` | Emergency, overdue, done |
+| Role | Token | Light / dark | Use |
+|---|---|---|---|
+| Page, card | `--bg`, `--surface` | soft lavender #ebe5f6, #f8f5fd / #0f0c16, #1d1828 | Layout |
+| Text, secondary | `--text`, `--muted` | #15121c, #5a5468 / #f4f2f8, #aaa3bb | All copy |
+| Start seizure | `--cta` / `--on-cta` | #7a3fc0 with white | The raised Seizure button, the logo tile |
+| Hero block | `--hero` / `--on-hero` | #3b2a6b / #4b3890, white text | Who's with them, only while someone is |
+| Type tints | `--seizure-card`, `--sleep-card`, `--med-card` | light tints / deep tints, thin outline in the type color | Seizures, Sleep and Medications cards |
+| Gold | `--gold` | #e8c15a, dark text | Follow-ups; active nav item; dark-mode headings |
+| Emergency | `--danger-fill` | #b3261e, white text | The Emergency info card, always red |
+| Entry types | `--seizure`, `--med`, `--sleep`, `--behavior`, `--note`, `--handoff` | per theme | Icons, labels, chip dots and card tints |
 
-Rules: at most one hero block per screen; a type color never fills a whole card; color is always paired with an icon or words; purple stays the seizure color (epilepsy awareness).
+**Soothing palettes.** More → Appearance offers Lavender (default), Soft blue, Sage, Soft pink and Earth, each in light and dark. Blue lowers stress, sage eases sensory fatigue, lilac/pink is warm, earth tones minimize clutter. A palette changes the page, cards, secondary text, links, the hero card and the nav bar only. Seizure purple, the emergency red, gold follow-ups and the entry-type colors never change, so their meaning is the same for everyone in the circle. All 10 combinations were checked at 4.5:1 or better (lowest 4.63:1).
 
-**Type.** Display headings in the phone's built-in serif (`ui-serif`, New York on iPhone, Georgia elsewhere; no downloaded fonts). Everything else in the system sans. Screen titles 38px serif; section titles 26px serif; hero values 32px serif; card labels 15px semibold; folder tabs 11px bold uppercase.
+Rules: at most one hero block per screen. The Seizures, Sleep and Medications cards take a light tint of their entry type's color with a thin outline in that color, so each card matches its timeline entries; other cards stay neutral. Color is always paired with an icon or words. Purple is only ever the seizure color.
 
-**Shape and space.** 18px card radius; pills for chips and call-to-action buttons; folder tabs sit on top of block cards; 16px card padding; 12px gaps; touch targets 48px minimum, 64px for Start seizure and emergency.
+**Type.** **Lexend** everywhere. It was designed to reduce visual crowding and is favoured in neurodiverse communities. It's bundled with the app (about 40 KB, no Google request, cached for offline use) and falls back to Verdana, then Arial.
+- **No serifs, italics, thin weights or decorative fonts.** Weights stay between 400 and 700.
+- **No negative letter-spacing.** Body line height is 1.5.
+- **No small all-caps.** Labels are in sentence case, at 12px or larger. The only capitals are the EVIE wordmark.
+- **The seizure timer uses Verdana/Arial.** Lexend's digits vary in width, so a ticking clock in Lexend jiggles; Verdana's and Arial's are fixed-width.
+- **The PDF uses Helvetica.**
+- **Sizes:** screen titles 34px bold, section titles 20px bold, card values 28px bold, card labels 15px semibold.
+
+**Layout rules (after a design review, 2026-09-28).** Only one round button on screen: the Seizure button. Whole cards are tappable, with a small chevron. A card's size follows its state: a dose that's due is big and gold; everything logged shrinks to one line; the purple hero appears only while someone is with the person. The emergency card is always red. The timeline is centered, and its filter chips are neutral with a small colored dot (there's no "All" chip; tapping a selected chip clears it). Serif is used only for the screen title.
+
+**Layout.** Home is a bento grid in the style of modern fitness dashboards: a brand row (logo, EVIE wordmark, Schedule button), a big title ("Maya's day"), two square stat tiles with pastel icon circles and big numbers, then wide feature cards that are tappable as a whole, with a small chevron. A floating dark pill nav holds at most five items, with the seizure button as a raised 80px circle in the middle.
+
+**Shape and space.** 18px card radius (24px for bento tiles and feature cards); pills for chips and call-to-action buttons; tabs (switching views on one screen, like the Care summary's 7/30/90 days) are a pill track with a dark highlight that slides to the selected tab, the same sliding track is used for Appearance mode (System / Light / Dark), while chips are for filters and form choices; folder tabs sit on top of block cards; 16px card padding; 12px gaps; touch targets 48px minimum, 64px for Start seizure and emergency.
 
 **Icons.** Simple line icons on a 24px grid, 1.75px stroke, in the type color. No logos or icons from other apps.
 
-**Motion and safety.** Nothing flashes or pulses; animations 200ms or less and off under reduced motion; the 5-minute alert is a steady color; no sounds. Bright colors are fine because they are still, but keep one hero block per screen.
+**Motion and safety.** Nothing flashes or pulses; animations 200ms or less and off under reduced motion; the 5-minute alert is a steady color; no sounds. Bright colors are fine because they are still, but keep one hero block per screen. One exception: in-app jumps (a stat tile down to the timeline, Home back to the top) use the browser's own smooth scroll, roughly 300–500ms. It only follows the person's own tap and is off under reduce motion. EVIE never takes over ordinary scrolling.
 
-**Logo.** The wordmark is "EVIE". The app icon is a placeholder (white "E" on purple, `public/icon.svg`); a final mark and PNG icons are still to be made.
+**Logo.** The wordmark is "EVIE" in the app, and "E.V.I.E." on the welcome screen, which spells out the name underneath: Event Video & Information Exchange. Each letter and its word share an entry-type color: E and Event in the medication green, V and Video in the sleep blue, I and Information in the behavior gold, E and Exchange in the handoff color. There's no seizure purple, which keeps purple for seizures only (the mark above is the seizure purple). The lowest contrast is 5.1:1, across all five palettes in light and dark. The welcome screen is a centered version of the home brand row (the brain-and-bolt mark on a purple tile), followed by a card of the three things EVIE keeps, in their type colors. The app icon is a placeholder (white "E" on purple, `public/icon.svg`); a final mark and PNG icons are still to be made.
 
 ## 5. Content rules that are part of the brand
 
