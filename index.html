@@ -10,7 +10,8 @@
     <title>EVIE: shared care timeline</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Shown until the app draws its first screen (styles.css .loader), so the page is never blank. -->
+    <div id="root"><div class="center"><span class="loader" role="status"><span class="loader-dots" aria-hidden="true"><span></span><span></span><span></span></span><span class="loader-label">Loading EVIE…</span></span></div></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

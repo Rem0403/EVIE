@@ -9,8 +9,10 @@ import Icon from '../components/Icon.jsx';
 import AttachmentUpload from '../components/AttachmentUpload.jsx';
 import { saveAttachments } from '../lib/attachments.js';
 import { findIdNumber, ID_NUMBER_MESSAGE } from '../lib/privacy.js';
+import { GOAL_RESULTS, sortGoals } from '../lib/goals.js';
 
-export default function QuickLog({ circle, me, type, entries, onDone }) {
+// goals and goalId are for type 'goal': the goals to choose from, and the one to start on.
+export default function QuickLog({ circle, me, type, entries, goals = [], goalId, onDone }) {
   const [now] = useState(() => Date.now());
   const lastMed = entries.find((e) => e.type === 'med' && e.status !== 'rescue');
   const sleepDefaults = defaultSleepTimes(now);
@@ -27,6 +29,9 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
   const [helped, setHelped] = useState([]);
   const [length, setLength] = useState(null);
   const [intensity, setIntensity] = useState(null);
+  const activeGoals = sortGoals(goals).filter((g) => g.status === 'active');
+  const [goal, setGoal] = useState(() => goalId || (activeGoals.length === 1 ? activeGoals[0].id : null));
+  const [result, setResult] = useState(null);
   // A good day has no before / what helped; the details are only for when they were struggling.
   const details = kind !== 'good_day';
   const [note, setNote] = useState('');
@@ -63,6 +68,12 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
         length: length || undefined,
         intensity: intensity || undefined,
       }];
+    }
+    if (type === 'goal') {
+      const chosen = goals.find((g) => g.id === goal);
+      if (!chosen) return [null, 'Choose which goal.'];
+      if (!result) return [null, 'Choose how it went.'];
+      return [{ ...base, occurredAt, goalId: chosen.id, goalTitle: chosen.title, result }];
     }
     if (!note.trim() && !files.length) return [null, 'Write a note or attach a file.'];
     return [{ ...base, occurredAt }];
@@ -108,7 +119,18 @@ export default function QuickLog({ circle, me, type, entries, onDone }) {
 
   return (
     <form className="stack" onSubmit={save}>
-      <h1 className={`with-icon type-${type}`}><Icon name={type} size={28} />Log {meta.label.toLowerCase()}</h1>
+      <h1 className={`with-icon type-${type}`}>
+        <Icon name={type} size={28} />Log {type === 'goal' ? 'goal practice' : meta.label.toLowerCase()}
+      </h1>
+
+      {type === 'goal' && (
+        <>
+          <span className="field-label">Which goal?</span>
+          <ChipGroup options={activeGoals.map((g) => [g.id, g.title])} value={goal} onChange={setGoal} />
+          <span className="field-label">How did it go?</span>
+          <ChipGroup options={GOAL_RESULTS} value={result} onChange={setResult} />
+        </>
+      )}
 
       {type === 'med' && (
         <>

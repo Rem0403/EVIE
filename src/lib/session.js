@@ -10,9 +10,10 @@ export function loadSession() {
   }
 }
 
-export function saveSession({ circleId, name }) {
+// demo: the circle was made by "Try a demo" and holds sample data.
+export function saveSession({ circleId, name, demo = false }) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ circleId, name }));
+    localStorage.setItem(KEY, JSON.stringify({ circleId, name, demo }));
   } catch {
     /* private mode: session just won't persist */
   }

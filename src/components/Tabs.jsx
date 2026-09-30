@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
 // Segmented tabs with a highlight that slides to the selected tab (adapted from beui.dev's tabs, in plain
-// CSS: a 200ms slide, off under reduce motion). Follows the ARIA tabs pattern: arrow keys, Home and End
+// CSS: --dur-slide, off under reduce motion). Follows the ARIA tabs pattern: arrow keys, Home and End
 // move between tabs and select them. Render the panel with tabPanelProps(id, value).
 // radio: the same look for a setting (like Light / Dark) with no panel, announced as radio buttons.
 export default function Tabs({ id, label, options, value, onChange, radio = false }) {

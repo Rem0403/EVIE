@@ -34,6 +34,15 @@ export function safeUrl(input) {
   return null;
 }
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// A mailto: link only for something shaped like one address, so a stored value can't add
+// extra recipients or a prefilled body.
+export function mailtoHref(email) {
+  const s = (email || '').trim();
+  return EMAIL.test(s) && !/[?&#,;<>]/.test(s) ? `mailto:${s}` : null;
+}
+
 export function telHref(phone) {
   const digits = (phone || '').replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
   return /\d{3,}/.test(digits) ? `tel:${digits}` : null;
@@ -58,7 +67,7 @@ export function cleanResource(f) {
   };
   if (!r.name) return [null, 'Give it a name.'];
   if (r.url === null) return [null, 'Enter a website like example.org.'];
-  if (r.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) return [null, 'Enter an email like name@example.org.'];
+  if (r.email && !mailtoHref(r.email)) return [null, 'Enter an email like name@example.org.'];
   if (r.nextDate && !r.nextStep) return [null, 'Say what the next step is, or clear the date.'];
   if (findIdNumber([r.name, r.nextStep, r.note].join('\n'))) return [null, ID_NUMBER_MESSAGE];
   return [r, null];

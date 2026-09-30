@@ -2,6 +2,7 @@ import {
   BEHAVIOR_BEFORE, BEHAVIOR_HELPED, BEHAVIOR_KINDS, HARD_BEHAVIORS, labelOf, SEIZURE_TYPES, startOfDay, TRIGGERS, TYPE_META,
 } from './format.js';
 import { doseAdherence } from './meds.js';
+import { goalTally } from './goals.js';
 
 const HOUR = 3600 * 1000;
 
@@ -171,6 +172,14 @@ export function previousSeizureCount(entries, start, days) {
   return entries.filter((e) => e.type === 'seizure' && e.occurredAt >= prevStart && e.occurredAt < start).length;
 }
 
+// Days of entries a `days`-day summary needs: its range, the same range before it to compare with,
+// and a month more, because the comparison only counts once there's an entry older than that.
+export const historyNeeded = (days) => days * 2 + 30;
+
+// Timeline windows: it opens on the first, and "Show older entries" steps through the rest.
+export const HISTORY_STEPS = [30, 90, 180, 365, 730];
+export const nextHistoryStep = (days) => HISTORY_STEPS.find((d) => d > days) || null;
+
 // Everything the Summary screen and the PDF show for the last `days` days, so the two can't disagree.
 export function summaryReport(entries, days, now = Date.now()) {
   const startDate = new Date(startOfDay(now));
@@ -198,6 +207,7 @@ export function summaryReport(entries, days, now = Date.now()) {
     behaviorText: tallyText(tally(behaviors.map((b) => ({ kinds: [b.kind || 'other'] })), 'kinds'), BEHAVIOR_KINDS),
     beforeText: tallyText(tally(hardBehaviors, 'before'), BEHAVIOR_BEFORE),
     helpedText: tallyText(tally(hardBehaviors, 'helped'), BEHAVIOR_HELPED),
+    goals: goalTally(inRange),
     compareText: prevCount === null
       ? `Not enough history to compare with the previous ${days} days.`
       : `vs previous ${days} days: ${prevCount} → ${stats.count} seizures`,

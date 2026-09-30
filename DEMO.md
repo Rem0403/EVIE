@@ -12,7 +12,7 @@
 - [ ] Phone A: fresh circle created at `…/?demo=1` with your name, **More → Load demo week** tapped **once** (it adds a week of entries, the care plan, and three sample resources).
 - [ ] Phone A shows the handoff banner ("With <you> · since 7:00 AM · until 3:00 PM"; after 3 PM it reads "Was with"), **Today’s meds**, and a **Follow up** card for the waiver waiting list.
 - [ ] Care summary at 30 days shows 3 pattern callouts: poor sleep, meltdown/shutdown in the 24h before, and morning.
-- [ ] Phone B: joined with the circle code (`EVIE-XXXX-XXXX`); its timeline matches Phone A.
+- [ ] Phone B: joined with the circle code (`<NAME>-XXXX-XXXX`); its timeline matches Phone A.
 - [ ] Stand-in clip (`demo-clip.mp4`, neutral footage, not a real seizure) saved in each phone's camera roll.
 - [ ] Both phones: Do Not Disturb on, brightness up, auto-lock off.
 
@@ -35,8 +35,20 @@
 9. **Why (20s):** Built from my family's experience with my sister, and shaped by talking to other families.
 
 ## Smoke test after every deploy
+- [ ] Welcome → **Try a demo with sample data** → home shows Maya's week and the demo banner; **End demo** returns to the welcome screen.
+- [ ] Home → **Invite** → **Copy code** copies the code; **Share invite link** → opening the link on another device shows the join form with the code filled in.
+- [ ] **Continue with Google** on phone A, then in a second browser **Continue with Google** with the same account → it opens the same circle. **More → Sign out of Google** returns to the welcome screen.
+- [ ] **More → Exit EVIE** → "All changes saved" online; in airplane mode → "Saved on this phone"; **Open EVIE again** returns to where you were.
+- [ ] Start a care circle → step through names, one caregiver with a phone, and one medication → the circle opens with them in the care plan and Today's meds; Getting started shows 1 of 4 done (medications; emergency needs the seizure plan too). Skipping every step still creates the circle.
+- [ ] New circle home: Seizures and Sleep tiles, then the Getting started list (no empty medication or handoff card); each row opens the right place; **Hide this list** keeps it hidden after a reload.
+- [ ] More → Goals → add a goal → **Log practice** → *With help* → the goal shows it under "Last 2 weeks", the timeline shows a Goal entry, the Goals filter chip finds it, and the Care summary lists it under Goals (screen and PDF). Edit → **Met** hides Log practice.
+- [ ] More → People: the person who started the circle sees **Remove** next to others; removing someone changes the join code, and their phone shows "You're no longer in …". **Get a new code** in the invite sheet makes the old code fail.
+- [ ] More → **Leave this circle** (online) → the welcome screen says you left, and the phone's copy is cleared.
+- [ ] Support: a resource's Website button opens a normal web page.
+- [ ] Care summary 90 days: shows "Loading 210 days of history…" briefly, then the comparison with the previous 90 days; Download PDF is off until then.
+- [ ] Browser console on the live site: no Content-Security-Policy report-only warnings during sign-in, sync, PDF export and (with App Check on) reCAPTCHA.
 - [ ] Create → join on a second device with the code → log a seizure with a clip → the entry appears on the other device with "Clip saved on …'s phone"; the clip plays on the phone that attached it.
-- [ ] Quick log each of med / sleep / behavior (with before and what helped) / note.
+- [ ] Quick log each of med / sleep / behavior (with before and what helped) / goal practice / note.
 - [ ] Care plan: add a diagnosis and a medication with two times → both phones show it in Today's meds; **Given** on one phone shows on the other.
 - [ ] Take over on the second phone → banner updates on both.
 - [ ] Emergency info: contacts call, allergies and seizure plan show; it opens over the seizure timer without stopping it; Print works.

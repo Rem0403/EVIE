@@ -2,6 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    // An optional field: absent, or text / a list no longer than max.
+    function text(d, key, max) { return !(key in d) || (d[key] is string && d[key].size() <= max); }
+    function list(d, key, max) { return !(key in d) || (d[key] is list && d[key].size() <= max); }
     function circlePath(id) { return /databases/$(database)/documents/circles/$(id); }
     function isMember(circleId) {
       return signedIn() && request.auth.uid in get(circlePath(circleId)).data.memberIds;
@@ -18,16 +21,24 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasOnly(['circleId'])
         && isMemberAfter(request.resource.data.circleId)
         && getAfter(circlePath(request.resource.data.circleId)).data.joinCode == code;
+      // Members clear their circle's old codes (they include the person's first name). Deleting a
+      // code that doesn't exist changes nothing, so it's allowed, which keeps those batches simple.
+      allow delete: if signedIn() && (resource == null || isMember(resource.data.circleId));
     }
 
     match /circles/{circleId} {
       allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
-      allow create: if signedIn() && request.resource.data.memberIds == [request.auth.uid];
+      // Whoever started the circle can delete it, after clearing everything in it (see deleteCircle).
+      allow delete: if signedIn() && request.auth.uid == resource.data.memberIds[0];
+      allow create: if signedIn() && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.keys().hasOnly(['name', 'personName', 'joinCode', 'memberIds', 'createdAt', 'profile', 'meds'])
+        && validCircle(request.resource.data);
       allow update: if signedIn() && (
         // Members may edit the care plan and schedule, rename or replace the code, but not change who is in the circle.
         (
           request.auth.uid in resource.data.memberIds
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile', 'schedule', 'documents'])
+          && validCircle(request.resource.data)
         )
         || (
           // Joining: add only yourself, proving you know the current code through the
@@ -38,26 +49,119 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)).data.joinCode
             == resource.data.joinCode
         )
+        || (
+          // Leaving: take only yourself out. The order is kept, so whoever started the circle stays first.
+          request.auth.uid in resource.data.memberIds
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+          && request.resource.data.memberIds == resource.data.memberIds.removeAll([request.auth.uid])
+        )
+        || (
+          // Removing someone: only whoever started the circle (first in memberIds), one person at a
+          // time, keeping the order, and the code changes in the same write so they can't rejoin with it.
+          request.auth.uid == resource.data.memberIds[0]
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'joinCode'])
+          && request.resource.data.joinCode is string
+          && request.resource.data.joinCode != resource.data.joinCode
+          && removedIds().size() == 1
+          && !(request.auth.uid in removedIds())
+          && request.resource.data.memberIds == resource.data.memberIds.removeAll(removedIds())
+        )
       );
+      function validCircle(d) {
+        return text(d, 'name', 200) && text(d, 'personName', 60) && text(d, 'joinCode', 40)
+          && list(d, 'meds', 100) && list(d, 'schedule', 300) && list(d, 'documents', 300)
+          && (!('profile' in d) || d.profile is map);
+      }
+      function removedIds() {
+        return resource.data.memberIds.removeAll(request.resource.data.memberIds);
+      }
 
       match /members/{uid} {
         allow read: if isMember(circleId);
-        allow create, update: if uid == request.auth.uid && isMemberAfter(circleId);
+        allow create, update: if uid == request.auth.uid && isMemberAfter(circleId)
+          && request.resource.data.keys().hasOnly(['displayName', 'joinCode', 'joinedAt'])
+          && request.resource.data.displayName is string && request.resource.data.displayName.size() > 0
+          && request.resource.data.displayName.size() <= 60;
+        // Your own record when you leave, or anyone's when whoever started the circle removes them.
+        allow delete: if isMember(circleId)
+          && (uid == request.auth.uid || request.auth.uid == get(circlePath(circleId)).data.memberIds[0]);
       }
 
       // The family's shared list of programs and groups: any member can add, edit or remove one.
+      // A saved link must be a plain http(s) address, so nothing written here can run as script.
+      function safeLink(d) {
+        return !('url' in d) || d.url == '' || (d.url is string && d.url.size() <= 500 && d.url.matches('https?://[^\\s]+'));
+      }
+      function validResource(d) {
+        return d.keys().hasOnly(['name', 'category', 'status', 'phone', 'url', 'email', 'nextStep', 'nextDate', 'note',
+            'createdBy', 'createdByName', 'updatedAt', 'updatedByName'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+          && text(d, 'phone', 60) && text(d, 'email', 200) && text(d, 'nextStep', 500) && text(d, 'nextDate', 10)
+          && text(d, 'note', 5000) && text(d, 'category', 40) && text(d, 'status', 40)
+          && text(d, 'createdByName', 60) && text(d, 'updatedByName', 60)
+          && safeLink(d);
+      }
       match /resources/{resourceId} {
         allow read, delete: if isMember(circleId);
-        allow create: if isMember(circleId) && request.resource.data.createdBy == request.auth.uid;
-        allow update: if isMember(circleId) && request.resource.data.createdBy == resource.data.createdBy;
+        allow create: if isMember(circleId) && request.resource.data.createdBy == request.auth.uid
+          && validResource(request.resource.data);
+        allow update: if isMember(circleId) && request.resource.data.createdBy == resource.data.createdBy
+          && validResource(request.resource.data);
       }
 
+      // Goals the person is working on (speech, daily living…): any member can add, edit or remove one.
+      function validGoal(d) {
+        return d.keys().hasOnly(['title', 'area', 'status', 'details', 'workingWith',
+            'createdAt', 'createdBy', 'createdByName', 'updatedAt', 'updatedByName'])
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 200
+          && d.status in ['active', 'paused', 'met']
+          && text(d, 'area', 40) && text(d, 'details', 5000) && text(d, 'workingWith', 200)
+          && text(d, 'createdByName', 60) && text(d, 'updatedByName', 60);
+      }
+      match /goals/{goalId} {
+        allow read, delete: if isMember(circleId);
+        allow create: if isMember(circleId) && request.resource.data.createdBy == request.auth.uid
+          && validGoal(request.resource.data);
+        allow update: if isMember(circleId) && request.resource.data.createdBy == resource.data.createdBy
+          && validGoal(request.resource.data);
+      }
+
+      // Every field any version of the app writes to an entry. Anything else is refused.
+      function validEntry(d) {
+        return d.keys().hasOnly(['type', 'occurredAt', 'createdBy', 'createdByName', 'note', 'attachments', 'attachmentsOn',
+            'durationSec', 'seizureType', 'triggers', 'rescueMedGiven', 'duringSleep', 'clipStatus', 'clipOn',
+            'photoStatus', 'photoOn', 'medName', 'dose', 'status', 'slot', 'bedtime', 'wakeTime', 'quality',
+            'kind', 'before', 'helped', 'length', 'intensity', 'until', 'goalId', 'goalTitle', 'result'])
+          && d.type in ['seizure', 'med', 'sleep', 'behavior', 'goal', 'note', 'handoff']
+          && d.occurredAt is timestamp
+          && d.createdByName is string && d.createdByName.size() <= 60
+          && text(d, 'note', 5000) && text(d, 'medName', 200) && text(d, 'dose', 100) && text(d, 'goalTitle', 200)
+          && text(d, 'attachmentsOn', 60) && text(d, 'clipOn', 60) && text(d, 'photoOn', 60)
+          && (!('durationSec' in d) || (d.durationSec is number && d.durationSec >= 0))
+          && list(d, 'triggers', 30) && list(d, 'before', 30) && list(d, 'helped', 30) && list(d, 'attachments', 10);
+      }
+      // The name on an entry is the author's name in this circle, so nobody can log as someone else.
+      // (Circles from before member records existed have none to check against.)
+      function ownName(d) {
+        return !exists(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid))
+          || get(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)).data.displayName
+            == d.createdByName;
+      }
       match /entries/{entryId} {
         allow read: if isMember(circleId);
-        // Entries are signed by whoever logs them, and the author can't be changed later.
-        allow create: if isMember(circleId) && request.resource.data.createdBy == request.auth.uid;
-        allow update: if isMember(circleId) && request.resource.data.createdBy == resource.data.createdBy;
-        allow delete: if isMember(circleId) && resource.data.createdBy == request.auth.uid;
+        // Entries are signed by whoever logs them.
+        allow create: if isMember(circleId) && request.resource.data.createdBy == request.auth.uid
+          && validEntry(request.resource.data) && ownName(request.resource.data);
+        // After that a logged entry is a record: the only change is noting that a clip or photo was
+        // attached, and on whose phone it is. Nobody can rewrite what was logged.
+        allow update: if isMember(circleId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clipStatus', 'clipOn', 'photoStatus', 'photoOn'])
+          && text(request.resource.data, 'clipOn', 60) && text(request.resource.data, 'photoOn', 60)
+          && (!('clipStatus' in request.resource.data) || request.resource.data.clipStatus in ['none', 'uploading', 'done', 'failed'])
+          && (!('photoStatus' in request.resource.data) || request.resource.data.photoStatus in ['none', 'uploading', 'done', 'failed']);
+        // The author, or whoever started the circle (so they can delete the whole circle).
+        allow delete: if isMember(circleId)
+          && (resource.data.createdBy == request.auth.uid || request.auth.uid == get(circlePath(circleId)).data.memberIds[0]);
       }
     }
   }

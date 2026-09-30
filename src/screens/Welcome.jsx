@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { createCircle, joinCircleByCode } from '../data/circles.js';
+import Setup from './Setup.jsx';
 import { normalizeJoinCode } from '../lib/codes.js';
-import { shareJoinCode, shareMessage } from '../lib/share.js';
+import { seedDemo } from '../data/demo.js';
 import { withTimeout } from '../lib/timeout.js';
-import { useFlash } from '../lib/useFlash.js';
 import Icon from '../components/Icon.jsx';
+import { InviteCode } from '../components/InviteCode.jsx';
 
 const NETWORK_TIMEOUT_MS = 15000;
 // Each letter and its word share an entry-type color. No purple: that's only ever the seizure color.
@@ -17,47 +18,27 @@ const NAME = [
 const POINTS = [
   ['seizure', 'Seizures', 'Time them, add a video, spot patterns'],
   ['med', 'Medications', 'Today’s doses, given or missed'],
-  ['behavior', 'Everyone in the loop', 'Behavior, handoffs, the care plan and support'],
+  ['behavior', 'Everyone in the loop', 'Behavior, goals, handoffs and the care plan'],
 ];
 const OFFLINE = "You're offline. Connect to the internet and try again.";
 
-export default function Welcome({ uid, onJoined }) {
-  const [mode, setMode] = useState(null); // null | 'create' | 'join' | 'created'
+// inviteCode: from an invite link, opens the join form with it filled in.
+// onGoogle: signs in with Google and resolves to an error message, or '' when done.
+// notice: a message from before, like having been removed from a circle.
+export default function Welcome({
+  uid, onJoined, inviteCode = '', email = '', onGoogle, notice = '', onPrivacy, onClearPhone,
+}) {
+  const [mode, setMode] = useState(inviteCode ? 'join' : null); // null | 'create' | 'join' | 'created'
   const [name, setName] = useState('');
-  const [personName, setPersonName] = useState('');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(inviteCode);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
-  const [shareMsg, setShareMsg] = useFlash();
-
-  async function handleCreate(e) {
-    e.preventDefault();
-    if (!navigator.onLine) {
-      setError(OFFLINE);
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      const circle = await withTimeout(
-        createCircle({ uid, displayName: name.trim(), personName: personName.trim() }),
-        NETWORK_TIMEOUT_MS,
-      );
-      setCreated(circle);
-      setMode('created');
-    } catch (err) {
-      console.error(err);
-      setError("Couldn't create the circle. Check your connection and try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function handleJoin(e) {
     e.preventDefault();
     if (!normalizeJoinCode(code)) {
-      setError('Codes look like EVIE-7KQ4-M2XP.');
+      setError('Codes look like MAYA-7KQ4-M2XP: a name, then 8 letters and numbers.');
       return;
     }
     if (!navigator.onLine) {
@@ -78,40 +59,55 @@ export default function Welcome({ uid, onJoined }) {
     }
   }
 
-  async function share() {
-    const result = await shareJoinCode(created);
-    setShareMsg(shareMessage(result, created));
+  // A throwaway circle filled with a sample week, so the app can be tried without typing anything.
+  async function handleDemo() {
+    if (!navigator.onLine) {
+      setError(OFFLINE);
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const me = { uid, name: 'You' };
+      const circle = await withTimeout(createCircle({ uid, displayName: me.name, personName: 'Maya' }), NETWORK_TIMEOUT_MS);
+      await withTimeout(seedDemo(circle, me), NETWORK_TIMEOUT_MS);
+      onJoined(circle, me.name, true);
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't start the demo. Check your connection and try again.");
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setBusy(true);
+    setError('');
+    const message = await onGoogle();
+    setError(message);
+    setBusy(false);
+  }
+
+  if (mode === 'create') {
+    return (
+      <Setup
+        uid={uid}
+        onCancel={() => { setMode(null); setError(''); }}
+        onCreated={(circle, yourName) => { setCreated(circle); setName(yourName); setMode('created'); }}
+      />
+    );
   }
 
   if (mode === 'created') {
     return (
       <section className="stack">
         <h1>Circle created</h1>
-        <p className="muted">Share this code with family and caregivers so they can join {created.personName}'s timeline.</p>
-        <div className="join-code" aria-label="Join code">{created.joinCode}</div>
-        <button className="btn" onClick={share}>Share invite</button>
-        {shareMsg && <p className="muted">{shareMsg}</p>}
-        <button className="btn primary" onClick={() => onJoined(created, name.trim())}>Go to timeline</button>
+        <p className="muted">
+          Share this code with family and caregivers so they can join {created.personName}'s timeline.
+          You can find it again any time with the Invite button on the home screen.
+        </p>
+        <InviteCode circle={created} />
+        <button className="btn" onClick={() => onJoined(created, name.trim())}>Go to timeline</button>
       </section>
-    );
-  }
-
-  if (mode === 'create') {
-    return (
-      <form className="stack" onSubmit={handleCreate}>
-        <h1>Start a care circle</h1>
-        <label>
-          Your name
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Remy" required maxLength={30} />
-        </label>
-        <label>
-          Who is this circle for?
-          <input value={personName} onChange={(e) => setPersonName(e.target.value)} placeholder="Their first name" required maxLength={30} />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <button className="btn primary" disabled={busy}>{busy ? 'Creating…' : 'Create circle'}</button>
-        <button type="button" className="btn ghost" onClick={() => { setMode(null); setError(''); }}>Back</button>
-      </form>
     );
   }
 
@@ -121,7 +117,7 @@ export default function Welcome({ uid, onJoined }) {
         <h1>Join a care circle</h1>
         <label>
           Join code
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="EVIE-7KQ4-M2XP" autoCapitalize="characters" required />
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="MAYA-7KQ4-M2XP" autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} required />
         </label>
         <label>
           Your name
@@ -148,6 +144,7 @@ export default function Welcome({ uid, onJoined }) {
         </p>
       </header>
       <p className="lead">One shared record for everyone who cares for them.</p>
+      {notice && <p className="notice" role="status">{notice}</p>}
       <ul className="welcome-points" aria-label="What EVIE keeps">
         {POINTS.map(([type, title, text]) => (
           <li key={type} className={`type-${type}`}>
@@ -158,6 +155,17 @@ export default function Welcome({ uid, onJoined }) {
       </ul>
       <button className="btn primary big" onClick={() => setMode('create')}>Start a care circle</button>
       <button className="btn big" onClick={() => setMode('join')}>Join with a code</button>
+      {error && <p className="error">{error}</p>}
+      <div className="welcome-more">
+        {email
+          ? <p className="muted small">Signed in with Google as {email}</p>
+          : <button className="btn" onClick={handleGoogle} disabled={busy}>Continue with Google</button>}
+        <button className="btn ghost" onClick={handleDemo} disabled={busy}>{busy ? 'Please wait…' : 'Try a demo with sample data'}</button>
+      </div>
+      <div className="welcome-footer">
+        {onPrivacy && <button className="link-btn" onClick={onPrivacy}>Privacy</button>}
+        {onClearPhone && <button className="link-btn" onClick={onClearPhone}>Clear EVIE data from this phone</button>}
+      </div>
     </section>
   );
 }

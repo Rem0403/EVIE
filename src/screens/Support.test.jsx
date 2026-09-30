@@ -35,6 +35,26 @@ it('lists resources with an overdue next step and tappable contact links', () =>
   expect(within(card).getByText('Call 555-0142').getAttribute('href')).toBe('tel:5550142');
 });
 
+it('never turns a stored javascript: or data: link into something tappable', () => {
+  // As if a member skipped the form and wrote these straight to the database.
+  const hostile = [
+    { ...waiver, id: 'x1', name: 'Evil 1', url: 'javascript:alert(document.domain)', email: 'a@b.co?body=hi', phone: '' },
+    { ...waiver, id: 'x2', name: 'Evil 2', url: ' JaVaScRiPt:alert(1)', email: 'javascript:alert(1)', phone: '' },
+    { ...waiver, id: 'x3', name: 'Evil 3', url: 'data:text/html,<script>alert(1)</script>', email: '', phone: '' },
+  ];
+  render(<Support circle={circle} resources={hostile} onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
+  expect(screen.queryByText('Website ↗')).toBeNull();
+  expect(screen.queryByText('Email')).toBeNull();
+  for (const a of document.querySelectorAll('a')) expect(a.getAttribute('href')).not.toMatch(/^\s*(javascript|data):/i);
+});
+
+it('shows a stored link only as a clean web address', () => {
+  render(<Support circle={circle} resources={[{ ...waiver, url: 'example.org/help', email: 'help@example.org' }]}
+    onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
+  expect(screen.getByText('Website ↗').getAttribute('href')).toBe('https://example.org/help');
+  expect(screen.getByText('Email').getAttribute('href')).toBe('mailto:help@example.org');
+});
+
 it('marks guide items already saved, and saves others prefilled', () => {
   const onAdd = vi.fn();
   render(<Support circle={circle} resources={[waiver]} onBack={vi.fn()} onAdd={onAdd} onEdit={vi.fn()} />);

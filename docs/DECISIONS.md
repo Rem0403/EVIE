@@ -21,18 +21,49 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 
 ## Identity and security
 
-**No accounts: anonymous sign-in plus a shared join code.** Revisitable: add optional account linking (Google or email) so a new phone doesn't lose its identity. 2026-09-26.
-- **Why:** A grandparent or respite worker can join in 30 seconds.
-- **Alternatives:** Email or Google accounts for everyone.
-- **Tradeoffs:** Clearing the browser or changing phones gives a new identity. That person loses delete rights on their old entries, and the clips stored on the old phone.
+**No accounts required: anonymous sign-in plus a shared join code, with optional Google sign-in.** 2026-09-26, Google added 2026-09-30.
+- **Why:** A grandparent or respite worker can join in 30 seconds. Reviewer feedback and the new-phone problem made Google worth adding, but only as an option.
+- **How Google works:** it is *linked* to the phone's anonymous account (`linkWithPopup`), so the uid doesn't change and the rules, `createdBy` and memberships all stay the same. On another phone, signing in with the same Google account switches to that identity (after a warning if this phone is in a circle) and opens the newest circle it belongs to. That lookup is a `memberIds array-contains uid` query, which the existing read rule allows only for your own uid (emulator test added). No rules change.
+- **Alternatives:** Email or Google accounts for everyone; email-link sign-in (more setup, more steps for the person).
+- **Tradeoffs:** Without Google, clearing the browser or changing phones still gives a new identity. Clips stay on the phone that recorded them either way. Popup sign-in needs pop-ups allowed.
 
-**Join codes are 8 random characters (`EVIE-XXXX-XXXX`), each stored in `joinCodes/{code}`.** Final. 2026-09-28.
+**"Try a demo" makes a real, throwaway circle.** Revisitable if demo circles pile up. 2026-09-30.
+- **Why:** Reuses the real app and the existing demo week, so what people try is exactly what they'd use. A fake offline mode would need a second data layer.
+- **Tradeoffs:** Each demo leaves a small circle (about 40 entries) in Firestore after **End demo**. Members can't delete circles under the rules; add a cleanup if storage ever matters.
+
+**Goals are their own collection (`circles/{id}/goals`), practice is a `goal` entry.** 2026-09-30.
+- **Why:** Tester feedback: families working on speech and other skills need goals apart from general notes, often several at once. One doc per goal (like Support resources) means two caregivers editing different goals can't overwrite each other, which an array on the circle would allow. Practice as an entry puts it on the shared timeline, in handoffs, the CSV and the summary with no new sync code.
+- **How it works:** Any member can add, edit or remove a goal; `createdBy` is set once, like resources (rules + emulator tests). Each entry stores `goalTitle` as well as `goalId`, so practice still reads correctly after a goal is renamed or removed. Results are *on their own*, *with help* or *not yet*.
+- **Tradeoffs:** Goals load with the circle (no paging); fine for the handful a family works on.
+
+**A Getting started checklist instead of a tutorial.** Revisitable if testers still find home confusing. 2026-09-30.
+- **Why:** Tester feedback said home was cluttered for a first-time user. A tour of coach marks breaks whenever the layout changes and is usually skipped. The checklist replaces the empty cards on a new circle (the medication prompt, and the handoff card until there's something to hand off; the Seizures and Sleep tiles always stay, at Remy's request), and each step opens the place to do it. Steps tick off from the circle's own data, so a later member sees what's already done.
+- **Tradeoffs:** "Hide" is remembered per phone, not per person.
+
+**Setup asks for the care team and medications, and writes the circle only at the end.** 2026-09-30.
+- **Why:** Tester feedback: creating a circle was too bare. The care team becomes the care plan's contacts (they need a phone, since they make up the emergency info), and medications become the daily schedule, using the same editors and validation as the care plan, including the ID-number guard. Writing once at the end means leaving halfway doesn't leave an empty circle.
+- **Tradeoffs:** Setup doesn't invite the people it lists; the invite code is shown straight after.
+
+**Security review, 2026-09-30 (Microsoft SDL).** Findings and what was done:
+- **Stored XSS through a resource link (high):** React 18 renders `javascript:` links. Fixed in both places: the rules accept only `http(s)` links, and Support rebuilds every link (`safeUrl`, `mailtoHref`, `telHref`) before showing it.
+- **Entries can't be rewritten:** after creation, only the clip and photo status fields can change (attaching media, from any member's phone). The author's name must match their member record, except in circles from before member records existed. Every collection has a field allow-list, types and size limits.
+- **Leaving and signing out clear the phone:** Firestore's offline copy, the media kept only on this phone and EVIE's saved settings (not appearance), after syncing. It is never done automatically on an error: a misconfigured App Check also returns "permission denied", and wiping then would destroy unsynced logs and phone-only videos. A removed member lands on the welcome screen, which offers **Clear EVIE data from this phone**.
+- **Deleting a circle:** whoever started it deletes everything in batches of 400, then the circle last (the rules check membership against it). That person can therefore delete others' entries too; they're the family's data owner.
+- **Headers:** enforced now; the CSP is report-only until it's been checked in a phone's browser console with Google sign-in, App Check and sync, then it moves to `Content-Security-Policy`. `Cross-Origin-Opener-Policy` is `same-origin-allow-popups` because `same-origin` breaks Google's sign-in pop-up.
+- **Not done in code (console work):** turning on App Check enforcement, restricting the API key, a usage budget alert, and GitHub secret scanning. An optional app lock (PIN) is a possible later feature.
+
+**Exit syncs, then shows a closing screen.** 2026-09-30.
+- **Why:** Browsers only let a page close itself in a few installed-app cases. Firestore already keeps unsynced writes on the phone, so exit only needs to flush them (`waitForPendingWrites`, up to 8 seconds) and say whether they reached the server.
+
+**Join codes are the person's first name plus 8 random characters (`MAYA-XXXX-XXXX`), each stored in `joinCodes/{code}`.** Final. 2026-09-28, name prefix 2026-09-30.
 - **Why:** The old 4-digit codes, and circles readable by anyone, let a stranger list every circle.
 - **How it works:** A code can be fetched by its exact value but never listed. Joining must prove the circle's current code in the same batch. Old circles upgrade automatically.
-- **Tradeoffs:** Longer codes to type.
+- **Name prefix (2026-09-30):** Replaced the fixed `EVIE-` so a code is easy to type and says whose circle it is. The name adds no security (it's guessable), so the random part stays 8 characters. The name is the first word of the person's name in plain capitals (accents dropped, up to 10 letters); `EVIE` if it has no Latin letters. Older `EVIE-` codes still work, and typing just the 8 random characters assumes `EVIE`.
+- **Tradeoffs:** Longer codes to type. A code shows the person's first name, which anyone who has the code can already see in the circle.
 
 **Firestore rules are the authorization boundary.** Final. 2026-09-28.
-- **Rules:** `createdBy` must equal the signed-in user and can't change later. Members can't remove each other. Every rules change adds emulator tests in `test/firestore.rules.test.js`.
+- **Rules:** `createdBy` must equal the signed-in user and can't change later. Only whoever started a circle (the first in `memberIds`) can remove people, one at a time and with a new join code in the same write; anyone can leave. Every rules change adds emulator tests in `test/firestore.rules.test.js`.
+- **Changed 2026-09-30 (security review):** members used to be unremovable and "Leave" only forgot the circle on the phone, so access could never be revoked. There are still no admin roles: whoever started the circle is the one person who can remove others, and if they leave, the next member takes over.
 
 **No ID numbers in EVIE.** Final. 2026-09-28.
 - **Why:** There are no passwords, so anyone in the circle, or holding one of its phones, can read everything.
@@ -45,9 +76,10 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 
 ## Data
 
-**Entries load as a 200-day window, not the newest 500.** Revisitable: add "load older" paging if families need more history or read quotas get tight. 2026-09-28.
-- **Why:** The 500 cap could silently undercount a 90-day summary. 200 days covers 90 days plus the previous 90 used for comparison.
-- **Tradeoffs:** About 1,000 reads each time a busy family opens the app, and the timeline stops at 200 days.
+**Entries load as a time window that starts at 30 days and widens on demand.** 2026-09-28, window changed 2026-09-30.
+- **Why:** A count cap (the newest 500) could silently undercount a summary. The fixed 200-day window cost about 1,000 reads per app open, so about 50 opens a day would use up the free plan's 50,000 reads for everyone.
+- **How it works:** The timeline opens on 30 days; **Show older entries** steps to 90, 180, 365 and 730. A summary of N days asks for 2N + 30 days, because its comparison with the previous period only counts once there's an entry older than that period. It waits for the server's answer (not the phone's cache, which may only hold the narrower window) before showing numbers or allowing export.
+- **Tradeoffs:** A handoff, or a goal's last practice, older than the window doesn't show until older entries are loaded.
 
 **The care plan (`profile`) and schedule (`meds`) live on the circle doc, and any member can edit them.** Revisitable if roles become necessary. 2026-09-28.
 - **Tradeoffs:** Two people editing at once. The form warns before replacing a plan someone else saved.
@@ -82,7 +114,7 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 
 **Sliding tabs (`components/Tabs.jsx`), adapted from beui.dev's tabs in plain CSS, with no motion, lucide or Tailwind.** Final. 2026-09-29.
 - **Why:** The Care summary's date range and Support's two sections are views of one screen, so they should read as tabs rather than filters. The component follows the ARIA tabs pattern: arrow keys, Home and End, and each tab linked to its panel.
-- **Tradeoffs:** The highlight slides in 200ms with an even ease-in-out (the app's shared ease made it look like a jump), with no spring and no overflow arrows, and it's off under reduce motion. The bottom nav's highlight circle uses the same slide between Home and Care summary, and fades out on other screens. Appearance mode (System / Light / Dark) uses the same control with `radio`, so screen readers hear a choice rather than tabs. Form choices and the timeline filters stay as chips, because they can pick several or filter a list.
+- **Tradeoffs:** The highlight slides (now 400ms, `--dur-slide`) with an even ease-in-out (the app's shared ease made it look like a jump), with no spring and no overflow arrows, and it's off under reduce motion. The bottom nav's highlight circle uses the same slide between Home and Care summary, and fades out on other screens. Appearance mode (System / Light / Dark) uses the same control with `radio`, so screen readers hear a choice rather than tabs. Form choices and the timeline filters stay as chips, because they can pick several or filter a list.
 
 ## Product and content
 
@@ -125,7 +157,13 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 **Smooth scrolling for in-app jumps only, using the browser's own smooth scroll.** Final. 2026-09-28.
 - **Where it applies:** a stat tile down to the timeline, and Home back to the top. Off under reduce motion.
 - **Why not Lenis:** it takes over wheel scrolling (about 1.2s), does nothing on phones, needs two packages, and can trigger motion sickness.
-- **Tradeoffs:** the glide takes roughly 300–500ms, a documented exception to the 200ms animation rule, allowed because it only follows the person's own tap.
+- **Tradeoffs:** the glide takes roughly 300–500ms and only follows the person's own tap.
+- **Revisited 2026-09-30:** Remy asked for beui.dev's Lenis scroll component so the timeline's "time sections" feel smooth, and for slower, more noticeable animations. The reasons above still hold (and by default it only smooths mouse wheels, not phones), so instead: timeline days glide in as they scroll into view using CSS scroll-driven animations (`animation-timeline: view()`, no script; browsers without it just show the days), each day's heading stays pinned, and animation times went from 180–200ms to 140ms press / 320ms change / 400ms slide. The 200ms cap is retired; everything stays off under reduce motion.
+
+**Loading animation: beui.dev's "dots", rebuilt in CSS (`components/Loader.jsx`).** 2026-09-30.
+- **Why dots:** of its 17 designs, dither, dot-matrix, scramble, the five ASCII frame sets and percent flicker (rapid brightness or glyph changes), which an epilepsy app must never show; metaballs, helix, morph, newton and comet are busy; bars reads as an audio meter; a constant spinner is what motion-sensitive people like least. Dots is calm and instantly read as "working".
+- **Changes from the original:** no opacity pulse (movement only), a 1.4s cycle, still dots under reduce motion (the original pulses instead; a looping animation under the global duration override would also jitter), always a visible label, and no Motion library.
+- **Where:** the first paint (static markup in `index.html`, so the page is never blank while the app loads), app start, clearing the phone, deleting a circle, exiting, People and the care summary's history. The timeline keeps its skeleton cards, which hold the layout.
 
 **Attachments stay on the phone that added them, like clips.** Final. 2026-09-29.
 - **How it works:** notes hold several files, and the care plan has a Documents list. Firestore stores only the name, type, size and whose phone has each file.

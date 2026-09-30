@@ -66,10 +66,11 @@ export function buildDemoWeek(now, me) {
     d.setHours(h, m, 0, 0);
     return d.getTime();
   };
-  const names = ['Mom', 'Dad', me.name || 'Remy'];
+  // Every entry is signed with the presenter's own name: the rules only accept an entry under the
+  // name its author joined with, so a demo can't show other caregivers' names on entries.
+  const who = me.name || 'Remy';
   const entries = [];
-  let n = 0;
-  const add = (entry) => entries.push({ createdBy: me.uid, createdByName: names[n++ % names.length], ...entry });
+  const add = (entry) => entries.push({ createdBy: me.uid, createdByName: who, ...entry });
 
   const poorNights = {
     8: { bed: at(8, 0, 30), wake: at(8, 5, 45), quality: 1 },
@@ -100,13 +101,46 @@ export function buildDemoWeek(now, me) {
   add({ type: 'behavior', occurredAt: at(4, 15, 0), kind: 'good_day', note: 'Great day at therapy.' });
   add({ type: 'behavior', occurredAt: at(2, 17, 30), kind: 'shutdown', before: ['sensory', 'tired'], helped: ['space'], length: '15to30', note: 'Went quiet after the grocery store.' });
 
-  add({ type: 'handoff', occurredAt: at(1, 18, 0), createdByName: 'Mom', note: 'Seizure this morning, rescue med given. Tired but OK.' });
+  add({ type: 'handoff', occurredAt: at(1, 18, 0), note: 'Seizure this morning, rescue med given. Tired but OK.' });
   // Demo entries are all saved under the presenter's account, so the current handoff is theirs.
-  add({ type: 'handoff', occurredAt: at(0, 7, 0), until: at(0, 15, 0), createdByName: me.name || 'Remy', note: 'Slept OK. I have her until 3.' });
+  add({ type: 'handoff', occurredAt: at(0, 7, 0), until: at(0, 15, 0), note: 'Slept OK. I have her until 3.' });
   add({ type: 'behavior', occurredAt: at(0, 10, 0), kind: 'good_day' });
 
   add({ type: 'note', occurredAt: at(6, 12, 0), note: 'Neurology appointment booked for Oct 3.' });
   add({ type: 'note', occurredAt: at(1, 9, 0), note: 'Post-ictal, slept 2h after. Mom stayed home.' });
 
   return entries.filter((e) => e.occurredAt <= now).sort((a, b) => b.occurredAt - a.occurredAt);
+}
+
+// Two goals a family might be working on, with practice spread over the demo week.
+export const DEMO_GOALS = [
+  {
+    title: 'Ask for “more” with a word or sign', area: 'communication', status: 'active',
+    workingWith: 'speech therapist', details: 'Counts if she signs or says “more” without being shown first.',
+  },
+  {
+    title: 'Put on her shoes by herself', area: 'daily_living', status: 'active',
+    workingWith: '', details: 'Velcro shoes. Practice before school.',
+  },
+];
+
+export function demoGoalPractice(now, me, goals) {
+  const base = startOfDay(now);
+  const at = (daysAgo, h) => {
+    const d = new Date(base);
+    d.setDate(d.getDate() - daysAgo);
+    d.setHours(h, 0, 0, 0);
+    return d.getTime();
+  };
+  const [talk, shoes] = goals;
+  const tries = [
+    [talk, 8, 12, 'help'], [talk, 6, 12, 'not_yet'], [talk, 4, 17, 'help'], [talk, 3, 12, 'own'], [talk, 1, 17, 'own'],
+    [shoes, 7, 7, 'help'], [shoes, 5, 7, 'help'], [shoes, 2, 7, 'own'], [shoes, 0, 7, 'help'],
+  ];
+  return tries
+    .map(([goal, daysAgo, h, result]) => ({
+      type: 'goal', occurredAt: at(daysAgo, h), goalId: goal.id, goalTitle: goal.title, result,
+      createdBy: me.uid, createdByName: me.name || 'Remy',
+    }))
+    .filter((e) => e.occurredAt <= now);
 }

@@ -45,13 +45,15 @@ export function deleteEntry(circleId, id) {
   return deleteDoc(doc(db, 'circles', circleId, 'entries', id));
 }
 
-// Enough for the longest summary (90 days) plus the 90 days before it that it's compared with.
-// ponytail: whole window loads on open (~5 entries/day ≈ 1,000 reads); add "load older" paging
-// if families need the timeline past 200 days or the free-plan read quota gets tight.
-const HISTORY_DAYS = 200;
-
-export function subscribeEntries(circleId, onChange, onError) {
-  const since = Timestamp.fromMillis(Date.now() - HISTORY_DAYS * 24 * 3600 * 1000);
+// Entries from the last `days` days, live. The app opens with a short window (each entry read is
+// billed, and the free plan allows 50,000 a day for everyone), and widens it for older entries
+// or a longer care summary.
+export function subscribeEntries(circleId, days, onChange, onError) {
+  const since = Timestamp.fromMillis(Date.now() - days * 24 * 3600 * 1000);
   const q = query(entriesRef(circleId), where('occurredAt', '>=', since), orderBy('occurredAt', 'desc'));
-  return onSnapshot(q, (snap) => onChange(snap.docs.map(fromFirestore)), onError);
+  // fromCache: the first answer to a wider window comes from this phone's cache, which may only
+  // hold the narrower one. Metadata changes are included so the server's answer always arrives,
+  // even when it matches the cache.
+  return onSnapshot(q, { includeMetadataChanges: true },
+    (snap) => onChange(snap.docs.map(fromFirestore), { fromCache: snap.metadata.fromCache }), onError);
 }

@@ -36,6 +36,8 @@ export function sinceText(entries, since, now) {
     const n = count((e) => e.type === 'behavior' && (BEHAVIOR_WORDS[e.kind] ? e.kind : 'other') === kind);
     if (n) parts.push(plural(n, one, many));
   }
+  const goals = count((e) => e.type === 'goal');
+  if (goals) parts.push(plural(goals, 'goal practice'));
   const notes = count((e) => e.type === 'note');
   if (notes) parts.push(plural(notes, 'note'));
   return parts.join(' · ') || 'Nothing logged';

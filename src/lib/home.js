@@ -13,3 +13,47 @@ export function lastSleep(entries, now = Date.now()) {
   const entry = recent.reduce((a, b) => (!a || b.wakeTime > a.wakeTime ? b : a), null);
   return entry ? { entry, minutes: Math.round((entry.wakeTime - entry.bedtime) / 60000) } : null;
 }
+
+// The first things a new circle needs, in order. Each is done when the circle's data says so,
+// so a later member sees what's already been set up.
+export function gettingStarted(circle, entries) {
+  const p = circle.profile || {};
+  return [
+    {
+      id: 'meds', done: !!circle.meds?.length, action: 'carePlan',
+      title: 'Add daily medications', text: 'Then everyone can see which doses were given today.',
+    },
+    {
+      id: 'emergency', done: !!(p.contacts?.length && p.rescuePlan), action: 'carePlan',
+      title: 'Add emergency contacts and the seizure plan', text: 'They make up the Emergency info a babysitter or paramedic sees first.',
+    },
+    {
+      id: 'invite', done: (circle.memberIds?.length || 0) > 1, action: 'invite',
+      title: 'Invite family and caregivers', text: 'Share the code so everyone logs to the same timeline.',
+    },
+    {
+      id: 'log', done: entries.length > 0, action: null,
+      title: 'Log something',
+      text: 'Tap the purple button below to time a seizure, or + to log a medication, sleep, behavior, goal practice or note.',
+    },
+  ];
+}
+
+// "Hide" on the checklist is remembered per circle on this phone.
+const hiddenKey = (circleId) => `evie.gettingStarted.hidden.${circleId}`;
+
+export function isGettingStartedHidden(circleId) {
+  try {
+    return localStorage.getItem(hiddenKey(circleId)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function hideGettingStarted(circleId) {
+  try {
+    localStorage.setItem(hiddenKey(circleId), '1');
+  } catch {
+    /* private mode: it just shows again next time */
+  }
+}

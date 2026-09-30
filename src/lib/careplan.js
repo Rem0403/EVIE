@@ -3,8 +3,10 @@ import { findIdNumber, ID_NUMBER_MESSAGE } from './privacy.js';
 
 export const CONTACT_ROLES = [
   ['family', 'Family'],
+  ['caregiver', 'Caregiver'],
   ['doctor', 'Doctor'],
   ['neurologist', 'Neurologist'],
+  ['therapist', 'Therapist'],
   ['caseworker', 'Case worker'],
   ['school', 'School'],
   ['other', 'Other'],

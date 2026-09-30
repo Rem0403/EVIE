@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { GUIDE, GUIDE_NOTE } from '../lib/supportGuide.js';
 import Tabs, { tabPanelProps } from '../components/Tabs.jsx';
-import { RESOURCE_CATEGORIES, RESOURCE_STATUS, sortResources, telHref } from '../lib/resources.js';
+import {
+  mailtoHref, RESOURCE_CATEGORIES, RESOURCE_STATUS, safeUrl, sortResources, telHref,
+} from '../lib/resources.js';
 import { labelOf, toLocalInput } from '../lib/format.js';
 
 const shortDate = (ymd) => {
@@ -36,7 +38,11 @@ export default function Support({ circle, resources, onBack, onAdd, onEdit }) {
             <p className="empty-inline muted">Nothing saved yet. Look through Start here, or add a program or group you already use.</p>
           )}
           {sortResources(resources).map((r) => {
+            // Every link is rebuilt from the stored text: the database may hold anything a member
+            // wrote directly, and React 18 doesn't block javascript: links.
             const tel = telHref(r.phone);
+            const web = safeUrl(r.url);
+            const mail = mailtoHref(r.email);
             return (
               <article key={r.id} className={`card resource status-${r.status}`}>
                 <div className="spread">
@@ -51,11 +57,11 @@ export default function Support({ circle, resources, onBack, onAdd, onEdit }) {
                     Next: {r.nextStep}{r.nextDate ? ` · ${r.nextDate < today ? 'overdue since ' : r.nextDate === today ? 'today, ' : ''}${shortDate(r.nextDate)}` : ''}
                   </p>
                 )}
-                {(tel || r.url || r.email) && (
+                {(tel || web || mail) && (
                   <div className="resource-links">
                     {tel && <a className="btn small" href={tel}>Call {r.phone}</a>}
-                    {r.url && <a className="btn small" href={r.url} target="_blank" rel="noopener noreferrer">Website ↗</a>}
-                    {r.email && <a className="btn small" href={`mailto:${r.email}`}>Email</a>}
+                    {web && <a className="btn small" href={web} target="_blank" rel="noopener noreferrer">Website ↗</a>}
+                    {mail && <a className="btn small" href={mail}>Email</a>}
                   </div>
                 )}
                 {r.note && <p className="small resource-note">{r.note}</p>}

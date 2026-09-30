@@ -3,13 +3,9 @@ import BottomBar from './BottomBar.jsx';
 import ColorSelector from './ColorSelector.jsx';
 import Icon from './Icon.jsx';
 import Tabs from './Tabs.jsx';
-import { shareJoinCode, shareMessage } from '../lib/share.js';
 import { useFlash } from '../lib/useFlash.js';
 import { loadPalette, loadTheme, PALETTES, savePalette, saveTheme, THEMES } from '../lib/theme.js';
-import { buildDemoWeek, DEMO_CARE_PLAN, demoResources } from '../lib/demoWeek.js';
-import { addEntriesBatch } from '../data/entries.js';
-import { updateCircle } from '../data/circles.js';
-import { addResource } from '../data/resources.js';
+import { seedDemo } from '../data/demo.js';
 
 // Swatch shown for each palette: a mid tone of its page color, so the circles are easy to tell apart.
 const SWATCH = { lavender: '#c9b8ea', blue: '#a9cbea', green: '#b3cfb8', pink: '#e9bcd6', earth: '#d8c7aa' };
@@ -18,13 +14,16 @@ const QUICK_TYPES = [
   ['med', 'Medication'],
   ['sleep', 'Sleep'],
   ['behavior', 'Behavior'],
+  ['goal', 'Goal practice'],
   ['note', 'Note'],
 ];
 
 // The floating nav on every screen (except the seizure timer), with its Log menu and More sheet.
+// onGoogle resolves to an error message, or '' when done.
 export default function AppNav({
-  circle, me, resources = [], demo, active,
-  onHome, onSummary, onSeizure, onQuickLog, onCarePlan, onSchedule, onSupport, onLeave,
+  circle, me, resources = [], goals = [], demo, active, email = '',
+  onHome, onSummary, onSeizure, onQuickLog, onCarePlan, onSchedule, onSupport, onGoals, onInvite, onPeople, onPrivacy,
+  onGoogle, onSignOut, onExit, onLeave,
 }) {
   const [chooser, setChooser] = useState(false);
   const [more, setMore] = useState(false);
@@ -33,19 +32,16 @@ export default function AppNav({
   const [toast, setToast] = useFlash();
   const [seeding, setSeeding] = useState(false);
 
-  async function share() {
-    const result = await shareJoinCode(circle);
-    setToast(shareMessage(result, circle));
+  async function google() {
+    const message = await onGoogle();
+    if (message) setToast(message);
   }
 
   async function loadDemo() {
     if (!window.confirm('Add a demo week of entries to this circle?')) return;
     setSeeding(true);
     try {
-      await addEntriesBatch(circle.id, buildDemoWeek(Date.now(), me));
-      // Only fill in a care plan nobody has written yet.
-      if (!circle.meds?.length && !circle.profile) await updateCircle(circle.id, DEMO_CARE_PLAN);
-      if (!resources.length) for (const r of demoResources(Date.now(), me)) addResource(circle.id, r);
+      await seedDemo(circle, me, { hasResources: resources.length > 0, hasGoals: goals.length > 0 });
     } catch (err) {
       console.error(err);
       setToast("Couldn't load demo data.");
@@ -92,6 +88,7 @@ export default function AppNav({
             <h2>More</h2>
             <div className="group">
               <button className="list-row" onClick={fromMore(onCarePlan)}>Care plan<Icon name="chevron" size={18} /></button>
+              <button className="list-row" onClick={fromMore(onGoals)}>Goals<Icon name="chevron" size={18} /></button>
               <button className="list-row" onClick={fromMore(onSchedule)}>Caregiver schedule<Icon name="chevron" size={18} /></button>
               <button className="list-row" onClick={fromMore(onSupport)}>Support<Icon name="chevron" size={18} /></button>
             </div>
@@ -107,10 +104,21 @@ export default function AppNav({
               />
             </div>
             <div className="group">
-              <button className="list-row" onClick={fromMore(share)}>
+              <button className="list-row" onClick={fromMore(onInvite)}>
                 <span>Invite family<span className="list-sub">Code {circle.joinCode}</span></span>
                 <Icon name="chevron" size={18} />
               </button>
+              <button className="list-row" onClick={fromMore(onPeople)}>People in this circle<Icon name="chevron" size={18} /></button>
+              {email ? (
+                <button className="list-row" onClick={fromMore(onSignOut)}>
+                  <span>Sign out of Google<span className="list-sub">Signed in as {email}</span></span>
+                </button>
+              ) : (
+                <button className="list-row" onClick={fromMore(google)}>
+                  <span>Save with Google<span className="list-sub">Get back to this circle on a new phone</span></span>
+                  <Icon name="chevron" size={18} />
+                </button>
+              )}
               {demo && (
                 <button className="list-row" onClick={fromMore(loadDemo)} disabled={seeding}>
                   {seeding ? 'Loading…' : 'Load demo week'}
@@ -118,7 +126,11 @@ export default function AppNav({
               )}
             </div>
             <div className="group">
-              <button className="list-row danger" onClick={fromMore(onLeave)}>Leave circle on this device</button>
+              <button className="list-row" onClick={fromMore(onPrivacy)}>Privacy<Icon name="chevron" size={18} /></button>
+              <button className="list-row" onClick={fromMore(onExit)}>
+                <span>Exit EVIE<span className="list-sub">Syncs your changes first</span></span>
+              </button>
+              <button className="list-row danger" onClick={fromMore(onLeave)}>Leave this circle</button>
             </div>
             <button className="btn" onClick={() => setMore(false)}>Close</button>
           </div>

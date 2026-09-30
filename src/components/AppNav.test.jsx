@@ -2,17 +2,16 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-vi.mock('../data/entries.js', () => ({ addEntriesBatch: vi.fn() }));
-vi.mock('../data/circles.js', () => ({ updateCircle: vi.fn() }));
-vi.mock('../data/resources.js', () => ({ addResource: vi.fn() }));
+vi.mock('../data/demo.js', () => ({ seedDemo: vi.fn() }));
 
 import AppNav from './AppNav.jsx';
 
 const handlers = () => ({
   onHome: vi.fn(), onSummary: vi.fn(), onSeizure: vi.fn(), onQuickLog: vi.fn(),
   onCarePlan: vi.fn(), onSchedule: vi.fn(), onSupport: vi.fn(), onLeave: vi.fn(),
+  onInvite: vi.fn(), onGoogle: vi.fn().mockResolvedValue(''), onSignOut: vi.fn(), onExit: vi.fn(),
 });
-const base = { circle: { id: 'c1', personName: 'Maya', joinCode: 'EVIE-7KQ4-M2XP' }, me: { uid: 'u1', name: 'Remy' } };
+const base = { circle: { id: 'c1', personName: 'Maya', joinCode: 'MAYA-7KQ4-M2XP' }, me: { uid: 'u1', name: 'Remy' } };
 
 beforeEach(() => {
   localStorage.clear();
@@ -60,4 +59,29 @@ it('offers soothing color palettes alongside light and dark', () => {
   fireEvent.click(screen.getByText('Dark'));
   expect(document.documentElement.dataset.theme).toBe('dark');
   expect(document.documentElement.dataset.palette).toBe('blue');
+});
+
+it('opens the invite and exits from More', () => {
+  const h = handlers();
+  render(<AppNav {...base} {...h} active="home" />);
+  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  fireEvent.click(screen.getByText('Invite family'));
+  expect(h.onInvite).toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  fireEvent.click(screen.getByText('Exit EVIE'));
+  expect(h.onExit).toHaveBeenCalled();
+});
+
+it('offers Google sign-in, or sign-out once signed in', () => {
+  const h = handlers();
+  render(<AppNav {...base} {...h} active="home" />);
+  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  fireEvent.click(screen.getByText('Save with Google'));
+  expect(h.onGoogle).toHaveBeenCalled();
+  cleanup();
+  render(<AppNav {...base} {...h} email="remy@example.com" active="home" />);
+  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  expect(screen.getByText('Signed in as remy@example.com')).toBeTruthy();
+  fireEvent.click(screen.getByText('Sign out of Google'));
+  expect(h.onSignOut).toHaveBeenCalled();
 });

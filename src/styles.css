@@ -36,6 +36,7 @@
   --med: #2f6b4f;
   --sleep: #4b4fc2;
   --behavior: #665800;    /* 5.3:1 or better on the lavender page and fills */
+  --goal: #0b6470;       /* 5:1 or better on every light palette */
   --note: #5f5a68;
   --handoff: #8a3f9e;
   /* Blocks (text on them is always full white or near-black, never dimmed). */
@@ -59,7 +60,11 @@
   --tap-big: 64px;
   --gap: 12px;
   --pad: 16px;
-  --dur: 180ms;           /* every animation stays at or under 200ms */
+  /* Motion is slow enough to notice, never showy (nothing flashes or pulses), and off under reduce motion. */
+  --dur-press: 140ms;     /* press feedback stays quick, so buttons never feel laggy */
+  --dur: 320ms;           /* things changing on screen: fades, chips, highlights, entries arriving */
+  --dur-slide: 400ms;     /* things that travel: sheets, the tab and nav highlights */
+  --ease-slide: cubic-bezier(0.4, 0, 0.2, 1);   /* even ease-in-out: the shared --ease makes a slide look like a jump */
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --font: 'Lexend', Verdana, Arial, Helvetica, sans-serif;   /* no serifs anywhere (readability for autism, dyslexia and eye strain) */
 
@@ -104,6 +109,7 @@
     --med: #8fd1b0;
     --sleep: #a9abf2;
     --behavior: #e8c15a;
+    --goal: #7fd0d9;
     --note: #b2adbc;
     --handoff: #e2b6ef;
     --hero: #4b3890;        --hero-edge: rgb(255 255 255 / 0.14);   /* white text 9.3:1 */
@@ -137,6 +143,7 @@
   --med: #8fd1b0;
   --sleep: #a9abf2;
   --behavior: #e8c15a;
+  --goal: #7fd0d9;
   --note: #b2adbc;
   --handoff: #e2b6ef;
   --hero: #4b3890;        --hero-edge: rgb(255 255 255 / 0.14);   /* white text 9.3:1 */
@@ -174,7 +181,7 @@ a { color: var(--accent); }
   border: 1px solid var(--separator); background: var(--surface); color: var(--text);
   font: inherit; font-weight: 600; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  transition: transform var(--dur) var(--ease), background-color var(--dur), border-color var(--dur), opacity var(--dur);
+  transition: transform var(--dur-press) var(--ease), background-color var(--dur), border-color var(--dur), opacity var(--dur);
 }
 .btn:active:not(:disabled) { transform: scale(0.97); }
 .btn:disabled { opacity: 0.55; cursor: default; }
@@ -205,7 +212,7 @@ progress { width: 100%; height: 8px; accent-color: var(--accent); }
 .chip {
   min-height: var(--tap); padding: 0 16px; border-radius: var(--pill); border: 1.5px solid var(--chip, var(--separator));
   background: transparent; font: inherit; font-size: 15px; font-weight: 500; white-space: nowrap; cursor: pointer; color: var(--chip, var(--text));
-  transition: background-color var(--dur) var(--ease), color var(--dur), border-color var(--dur), transform var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), color var(--dur), border-color var(--dur), transform var(--dur-press) var(--ease);
 }
 .chip:active { transform: scale(0.96); }
 .chip.on { background: var(--chip, var(--text)); color: var(--bg); border-color: var(--chip, var(--text)); }
@@ -275,6 +282,9 @@ progress { width: 100%; height: 8px; accent-color: var(--accent); }
 .block-gold .list-sub, .block-gold .list-row .icon { color: var(--block-muted); }
 
 .day-label { font-size: 14px; font-weight: 600; color: var(--muted); margin: 20px 4px 8px; }
+/* Each day's heading stays pinned while you scroll through that day, so you always know which day
+   you're looking at. Opaque, so entries slide under it cleanly. */
+.timeline-section .day-label { position: sticky; top: 0; z-index: 2; margin: 12px 0 8px; padding: 8px 4px; background: var(--bg); }
 .card { background: var(--surface); border: none; border-radius: var(--radius); padding: var(--pad); box-shadow: var(--shadow-card); }
 
 /* Summary-style card: icon + colored label top left, time top right, big value, gray detail. */
@@ -336,12 +346,12 @@ button.summary-card:active { background: var(--fill); }
   display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
   background: transparent; color: var(--on-nav);
 }
-.nav-btn { position: relative; z-index: 1; transition: color 200ms; }
+.nav-btn { position: relative; z-index: 1; transition: color var(--dur); }
 .nav-btn.active { color: #0e0e11; }
 .bottom-nav:not(.measured) .nav-btn.active { background: var(--nav-active); }   /* before the slider is measured */
-.nav-indicator {   /* slides like the tabs (same 200ms ease-in-out); off under reduce motion */
+.nav-indicator {   /* slides like the tabs (same speed and ease); off under reduce motion */
   position: absolute; top: 0; left: 0; border-radius: 50%; background: var(--nav-active);
-  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms;
+  transition: transform var(--dur-slide) var(--ease-slide), opacity var(--dur);
 }
 .nav-indicator.hidden { opacity: 0; }
 .nav-seizure {
@@ -357,7 +367,7 @@ button.summary-card:active { background: var(--fill); }
 .sheet {
   width: 100%; max-width: 480px; background: var(--surface); border-radius: 28px 28px 0 0; box-shadow: var(--shadow-sheet);
   padding: 28px 16px calc(20px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  position: relative; animation: sheet-up var(--dur) var(--ease) both;
+  position: relative; animation: sheet-up var(--dur-slide) var(--ease) both;
 }
 .sheet::before { /* grabber */
   content: ''; position: absolute; top: 10px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: var(--pill); background: var(--border);
@@ -403,18 +413,19 @@ video { background: #000; }
 
 .offline-banner { position: sticky; top: 0; z-index: 20; background: var(--banner-bg); color: var(--banner-text); text-align: center; padding: 8px; font-weight: 500; font-size: 0.9rem; }
 
-/* Icons: line icons tinted by type */
+/* Icons: solid icons tinted by type */
 .icon { flex: none; vertical-align: -0.2em; }
 .with-icon { display: inline-flex; align-items: center; gap: 8px; }
 .type-seizure .icon { color: var(--seizure); }
 .type-med .icon { color: var(--med); }
 .type-sleep .icon { color: var(--sleep); }
 .type-behavior .icon { color: var(--behavior); }
+.type-goal .icon { color: var(--goal); }
 .type-note .icon { color: var(--muted); }
 .count { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; white-space: nowrap; }
 
 /* Motion */
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(100%); } }
 /* Wider screens (tablet, laptop): use the space. Phones are unchanged.
@@ -462,7 +473,7 @@ video { background: #000; }
 .step h1:focus, .sheet.info h2:focus { outline: none; }
 .step-progress { display: flex; align-items: center; gap: 10px; }
 .step-dots { display: flex; gap: 6px; }
-.step-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background-color 200ms; }
+.step-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background-color var(--dur); }
 .step-dots span.on { background: var(--brand); }
 .choices { display: grid; gap: 10px; }
 .choices.two { grid-template-columns: 1fr 1fr; }
@@ -471,7 +482,7 @@ video { background: #000; }
   min-height: 64px; padding: 12px 16px; text-align: left; cursor: pointer;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
   font: inherit; box-shadow: var(--shadow-card);
-  transition: transform 160ms var(--ease), background-color 200ms, border-color 200ms;
+  transition: transform var(--dur-press) var(--ease), background-color var(--dur), border-color var(--dur);
 }
 .choices.two .choice { align-items: center; min-height: 80px; }
 .choice strong { font-weight: 500; font-size: 1.05rem; }
@@ -573,9 +584,10 @@ video { background: #000; }
 .tc-med .icon { color: var(--med); }
 .tc-sleep .icon { color: var(--sleep); }
 .tc-behavior .icon { color: var(--behavior); }
+.tc-goal .icon { color: var(--goal); }
 .tc-note .icon { color: var(--note); }
 .tc-handoff .icon { color: var(--handoff); }
-.tc-seizure, .tc-med, .tc-sleep, .tc-behavior, .tc-note, .tc-handoff { color: var(--text); }
+.tc-seizure, .tc-med, .tc-sleep, .tc-behavior, .tc-goal, .tc-note, .tc-handoff { color: var(--text); }
 
 .block-hero .card-value { font-family: var(--font); font-weight: 700; font-size: 28px; }
 .block-hero .card-label, .block-hero .card-time { color: var(--on-hero); }
@@ -606,6 +618,7 @@ video { background: #000; }
 .filters .chip[data-key="med"] { --dot: var(--med); }
 .filters .chip[data-key="sleep"] { --dot: var(--sleep); }
 .filters .chip[data-key="behavior"] { --dot: var(--behavior); }
+.filters .chip[data-key="goal"] { --dot: var(--goal); }
 .filters .chip[data-key="note"] { --dot: var(--note); }
 @media (min-width: 760px) {
   .timeline-section { max-width: 760px; margin: 0 auto; }
@@ -715,7 +728,7 @@ video { background: #000; }
   border: 0; border-radius: 50%; background: var(--surface); color: var(--text); cursor: pointer; box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
 }
 
-/* Tabs: a segmented row with a highlight that slides to the selected tab (180ms, off under reduce motion). */
+/* Tabs: a segmented row with a highlight that slides to the selected tab (--dur-slide, off under reduce motion). */
 .tablist {
   position: relative; display: inline-flex; align-self: flex-start; gap: 2px; padding: 4px; max-width: 100%; overflow-x: auto;
   border-radius: var(--pill); background: var(--fill); scrollbar-width: none;
@@ -730,7 +743,101 @@ video { background: #000; }
 .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .tab-indicator {
   position: absolute; top: 4px; bottom: 4px; left: 0; border-radius: var(--pill); background: var(--text);
-  /* An even ease-in-out at the 200ms cap: the shared --ease front-loads the move so much the slide reads as a jump. */
-  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* An even ease-in-out: the shared --ease front-loads the move so much the slide reads as a jump. */
+  transition: transform var(--dur-slide) var(--ease-slide), width var(--dur-slide) var(--ease-slide);
 }
 .tab-panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
+
+/* Invite: the code with Share and Copy side by side. */
+.invite-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sheet .invite-actions .btn { min-height: var(--tap-big); }
+@media (max-width: 399px) { .hide-narrow { display: none; } }
+
+/* Welcome: Google sign-in and the demo, below the two main ways in. */
+.welcome-more { display: flex; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; }
+
+/* Shown on home in a "Try a demo" circle. */
+.demo-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 0 12px; padding: 8px 8px 8px 16px; border-radius: var(--radius);
+  background: var(--fill); color: var(--text); font-weight: 500; font-size: 0.9rem;
+}
+
+/* Setup: which step you're on. */
+.setup-step { margin: 0; }
+
+/* Getting started checklist on a new circle's home. */
+.setup-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.setup-list li + li { border-top: 1px solid var(--separator); }
+.setup-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: var(--tap); padding: 10px 0;
+  background: none; border: none; color: inherit; font: inherit; text-align: left;
+}
+button.setup-row { cursor: pointer; }
+.setup-row > .icon { margin-left: auto; flex: none; color: var(--muted); }
+.setup-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.setup-mark {
+  display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--fill); font-size: 14px; font-weight: 700;
+}
+.setup-mark.done { background: var(--ok); color: var(--bg); }
+.setup-list .is-done strong { color: var(--muted); font-weight: 500; }
+
+/* Goals */
+.goal { display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--goal); }
+.goal.status-paused, .goal.status-met { border-left-color: var(--separator); }
+.goal-title { overflow-wrap: anywhere; }
+.goal p { margin: 0; }
+
+/* A calm status message (not an error). */
+.notice { padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--text); margin: 0; }
+
+/* People in this circle */
+.people-list { list-style: none; margin: 0; padding: 4px 16px; border-radius: 24px; background: var(--surface); }
+.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); padding: 10px 0; }
+.person + .person { border-top: 1px solid var(--separator); }
+.person strong { overflow-wrap: anywhere; }
+
+/* End of the timeline: how far back it goes, and the button for older entries. */
+.older { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 16px; text-align: center; }
+
+/* Welcome: small links at the very bottom. */
+.welcome-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; margin-top: 8px; }
+.welcome-footer .link-btn { color: var(--muted); font-weight: 500; }
+
+/* Privacy notice */
+.privacy ul { margin: 0; padding-left: 20px; }
+.privacy li { line-height: 1.5; margin-bottom: 6px; }
+.privacy h2 { margin: 12px 0 0; }
+
+/* Timeline days glide in as they scroll into view, driven by the scroll itself (no script, no library,
+   ordinary scrolling untouched). Browsers without scroll-driven animations, and anyone who has
+   turned on reduce motion, simply see the days, as before. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .timeline-section > section {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+}
+
+/* Loader: three dots rising and falling in turn (components/Loader.jsx). Only movement, never a
+   change in brightness, and slow enough to read as calm. Also used as static markup in index.html
+   while the app itself loads. */
+.loader { display: inline-flex; flex-direction: column; align-items: center; gap: 14px; color: var(--muted); font-weight: 500; }
+.loader-dots { display: flex; align-items: flex-end; gap: 8px; height: 30px; }
+.loader-dots span {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--accent-fill);
+  animation: loader-rise 1.4s var(--ease-slide) infinite;
+}
+.loader-dots span:nth-child(2) { animation-delay: 0.22s; }
+.loader-dots span:nth-child(3) { animation-delay: 0.44s; }
+@keyframes loader-rise { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-14px); } }
+/* The global reduce-motion rule shortens durations, which would make a looping animation jitter;
+   the dots stop instead. */
+@media (prefers-reduced-motion: reduce) {
+  .loader-dots span { animation: none !important; }
+}
+.loader-row { display: flex; justify-content: center; padding: 24px 0; }

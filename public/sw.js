@@ -26,6 +26,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/__/')) return; // Firebase's own pages (Google sign-in), never the app shell
 
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).then((res) => cacheCopy('/', res)).catch(() => caches.match('/')));

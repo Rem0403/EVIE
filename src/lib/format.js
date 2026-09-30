@@ -1,3 +1,5 @@
+import { GOAL_RESULTS } from './goals.js';
+
 export const SEIZURE_TYPES = [
   ['tonic-clonic', 'Tonic-clonic'],
   ['focal', 'Focal'],
@@ -108,6 +110,7 @@ export const TYPE_META = {
   med: { label: 'Medication' },
   sleep: { label: 'Sleep' },
   behavior: { label: 'Behavior' },
+  goal: { label: 'Goal' },
   note: { label: 'Note' },
   handoff: { label: 'Handoff' },
 };
@@ -196,6 +199,8 @@ export function entryTitle(e) {
         e.intensity && labelOf(INTENSITY, e.intensity).toLowerCase(),
         e.length && labelOf(BEHAVIOR_LENGTH, e.length),
       ].filter(Boolean).join(' · ');
+    case 'goal':
+      return [truncate(e.goalTitle || 'Goal', 60), e.result && labelOf(GOAL_RESULTS, e.result)].filter(Boolean).join(' · ');
     case 'note':
       return e.note ? truncate(e.note, 60) : 'Note';
     case 'handoff':
@@ -240,6 +245,10 @@ export function detailRows(e) {
     if (e.helped?.length) rows.push(['What helped', e.helped.map((k) => labelOf(BEHAVIOR_HELPED, k)).join(', ')]);
     if (e.length) rows.push(['How long', labelOf(BEHAVIOR_LENGTH, e.length)]);
     if (e.intensity) rows.push(['Intensity', labelOf(INTENSITY, e.intensity)]);
+  }
+  if (e.type === 'goal') {
+    rows.push(['Goal', e.goalTitle || '—']);
+    if (e.result) rows.push(['How it went', labelOf(GOAL_RESULTS, e.result)]);
   }
   if (e.type === 'handoff' && e.until) rows.push(['Until', `${dayLabel(e.until)} ${formatTime(e.until)}`]);
   if (e.note) rows.push(['Note', e.note]);

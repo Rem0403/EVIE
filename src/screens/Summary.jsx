@@ -1,17 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Tabs, { tabPanelProps } from '../components/Tabs.jsx';
 import Media from '../components/Media.jsx';
 import Icon from '../components/Icon.jsx';
-import { countByType, LONG_SEIZURE_SEC, summaryReport } from '../lib/summary.js';
+import Loader from '../components/Loader.jsx';
+import { countByType, historyNeeded, LONG_SEIZURE_SEC, summaryReport } from '../lib/summary.js';
 import { downloadBlob, downloadSummaryPdf, entriesCsv, fileDate } from '../lib/export.js';
+import { practiceText } from '../lib/goals.js';
 import { diagnosisText, formatDuration, formatTime, labelOf, SEIZURE_TYPES, SLEEP_QUALITY, TYPE_META } from '../lib/format.js';
 
 const RANGES = [[7, '7 days'], [30, '30 days'], [90, '90 days']];
 const shortDate = (ms) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-export default function Summary({ circle, entries, days, onDaysChange, onBack, onOpen }) {
+// loadedDays: how many days of entries have fully arrived. The summary waits for enough (its range
+// plus the range before it) so the numbers, and any PDF or CSV, never come from a partial history.
+export default function Summary({
+  circle, entries, days, loadedDays = Infinity, onNeedHistory = () => {}, onDaysChange, onBack, onOpen,
+}) {
   const [exportError, setExportError] = useState('');
-  const report = summaryReport(entries, days);
+  const ready = loadedDays >= historyNeeded(days);
+  useEffect(() => {
+    onNeedHistory(historyNeeded(days));
+  }, [days]);
+  // Recomputed only when the entries or the range change, not on every render.
+  const report = useMemo(() => summaryReport(entries, days), [entries, days]);
   const { start, end, inRange, stats, strip, seizures } = report;
   const found = report.patterns;
 
@@ -35,9 +46,9 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
       <div className="spread no-print" style={{ flexWrap: 'wrap' }}>
         <button className="btn ghost small" onClick={onBack}>← Back</button>
         <div className="row">
-          <button className="btn small" onClick={downloadCsv}>CSV</button>
-          <button className="btn small" onClick={downloadPdf}>Download PDF</button>
-          <button className="btn small" onClick={() => window.print()}>Print</button>
+          <button className="btn small" onClick={downloadCsv} disabled={!ready}>CSV</button>
+          <button className="btn small" onClick={downloadPdf} disabled={!ready}>Download PDF</button>
+          <button className="btn small" onClick={() => window.print()} disabled={!ready}>Print</button>
         </div>
       </div>
       {exportError && <p className="error no-print">{exportError}</p>}
@@ -54,6 +65,13 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
         <Tabs id="range" label="Date range" options={RANGES} value={days} onChange={onDaysChange} />
       </div>
 
+      {!ready && (
+        <div aria-busy="true" aria-label="Loading the care summary">
+          <div className="loader-row"><Loader label={`Loading ${historyNeeded(days)} days of history…`} /></div>
+          {[0, 1].map((i) => <div key={i} className="card skeleton" aria-hidden="true" />)}
+        </div>
+      )}
+      {ready && (
       <div {...tabPanelProps('range', days)} className="stack tab-panel">
 
         <div className="stats">
@@ -89,6 +107,12 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
             {report.helpedText && <p className="muted">What helped: {report.helpedText}</p>}
           </>
         ) : <p className="muted">No behavior logged in this range.</p>}
+
+        <h2>Goals</h2>
+        {report.goals.length === 0 && <p className="muted">No goal practice logged in this range.</p>}
+        {report.goals.map((g, i) => (
+          <p key={i}><strong>{g.title}</strong><br /><span className="muted">{practiceText(g)}</span></p>
+        ))}
 
         <h2>Day by day</h2>
         <p className="muted small"><span className="type-seizure"><Icon name="seizure" size={15} /></span> seizures · <span className="type-med"><Icon name="med" size={15} /></span> missed doses · sleep quality shown as Poor, OK or Good</p>
@@ -131,6 +155,7 @@ export default function Summary({ circle, entries, days, onDaysChange, onBack, o
           </div>
         ))}
       </div>
+      )}
     </section>
   );
 }

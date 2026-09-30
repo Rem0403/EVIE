@@ -81,3 +81,33 @@ it('refuses a note containing an ID number', () => {
   expect(screen.getByText(/Social Security or Medicaid/)).toBeTruthy();
   expect(addEntry).not.toHaveBeenCalled();
 });
+
+const goals = [
+  { id: 'g1', title: 'Ask for more', status: 'active', createdAt: 2 },
+  { id: 'g2', title: 'Shoes on', status: 'active', createdAt: 1 },
+  { id: 'g3', title: 'Old goal', status: 'met', createdAt: 3 },
+];
+const goalLog = (extra = {}) => render(
+  <QuickLog circle={{ id: 'c1' }} me={{ uid: 'u1', name: 'Remy' }} type="goal" entries={[]} goals={goals} onDone={vi.fn()} {...extra} />,
+);
+
+it('logs goal practice against one goal, with how it went, apart from notes', () => {
+  goalLog();
+  expect(screen.getByRole('heading', { name: 'Log goal practice' })).toBeTruthy();
+  expect(screen.queryByText('Old goal')).toBeNull(); // only goals being worked on
+  fireEvent.click(screen.getByText('Save'));
+  expect(screen.getByText('Choose which goal.')).toBeTruthy();
+  fireEvent.click(screen.getByText('Shoes on'));
+  fireEvent.click(screen.getByText('Save'));
+  expect(screen.getByText('Choose how it went.')).toBeTruthy();
+  fireEvent.click(screen.getByText('With help'));
+  fireEvent.click(screen.getByText('Save'));
+  expect(addEntry).toHaveBeenCalledWith('c1', expect.objectContaining({
+    type: 'goal', goalId: 'g2', goalTitle: 'Shoes on', result: 'help', createdBy: 'u1',
+  }));
+});
+
+it('starts on the goal it was opened from', () => {
+  goalLog({ goalId: 'g1' });
+  expect(screen.getByText('Ask for more').getAttribute('aria-pressed')).toBe('true');
+});

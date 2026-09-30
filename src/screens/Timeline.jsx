@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ChipGroup from '../components/ChipGroup.jsx';
 import EntryCard from '../components/EntryCard.jsx';
 import TodayMeds from '../components/TodayMeds.jsx';
 import Handoff from '../components/Handoff.jsx';
 import FollowUps from '../components/FollowUps.jsx';
+import GettingStarted from '../components/GettingStarted.jsx';
 import Icon from '../components/Icon.jsx';
 import { dayLabel, formatTime, groupByDay, labelOf, SLEEP_QUALITY } from '../lib/format.js';
-import { lastSleep, recentSeizures } from '../lib/home.js';
+import {
+  gettingStarted, hideGettingStarted, isGettingStartedHidden, lastSleep, recentSeizures,
+} from '../lib/home.js';
 import { scrollToId } from '../lib/scroll.js';
+import { nextHistoryStep } from '../lib/summary.js';
 
 // No "All" chip: nothing selected shows everything, and tapping the selected chip again clears it.
 const FILTERS = [
@@ -15,6 +19,7 @@ const FILTERS = [
   ['med', 'Meds'],
   ['sleep', 'Sleep'],
   ['behavior', 'Behavior'],
+  ['goal', 'Goals'],
   ['note', 'Notes'],
 ];
 
@@ -24,8 +29,8 @@ const whenShort = (ms, now) => `${dayLabel(ms, now)}, ${formatTime(ms)}`;
 // Home: two stat tiles, then cards sized by what needs doing now, then the shared timeline.
 // Navigation (Seizure, Log, More…) is the floating AppNav, shown on every screen.
 export default function Timeline({
-  circle, me, entries, resources = [], loading = false,
-  onOpen, onCarePlan, onOpenResource, onEmergency, onSchedule,
+  circle, me, entries, resources = [], loading = false, historyDays, onShowOlder,
+  onOpen, onCarePlan, onOpenResource, onEmergency, onSchedule, onInvite,
 }) {
   const [filter, setFilter] = useState(null);
   // Re-render each minute so doses turn "Due", and handoffs end, while the app sits open.
@@ -35,10 +40,19 @@ export default function Timeline({
     return () => clearInterval(t);
   }, []);
 
+  const [setupHidden, setSetupHidden] = useState(() => isGettingStartedHidden(circle.id));
+  const steps = gettingStarted(circle, entries);
+  const showSetup = !loading && !setupHidden && steps.some((s) => !s.done);
+  // A new circle shows the checklist instead of cards that would only say "nothing yet".
+  const empty = !loading && entries.length === 0;
+
   const seizures = recentSeizures(entries, now);
   const sleep = lastSleep(entries, now);
-  const visible = filter ? entries.filter((e) => e.type === filter) : entries;
-  const groups = groupByDay(visible);
+  const groups = useMemo(() => groupByDay(filter ? entries.filter((e) => e.type === filter) : entries), [entries, filter]);
+  // Only the last `historyDays` days are loaded. Offer older ones when the circle is older than that.
+  const createdAt = circle.createdAt?.toMillis ? circle.createdAt.toMillis() : circle.createdAt;
+  const next = historyDays ? nextHistoryStep(historyDays) : null;
+  const olderExists = !!historyDays && (!createdAt || createdAt < now - historyDays * 24 * 3600 * 1000);
 
   // Tapping a stat tile shows those entries in the timeline below.
   function showType(type) {
@@ -52,10 +66,19 @@ export default function Timeline({
         <span className="logo-mark" aria-hidden="true"><Icon name="seizure" size={22} /></span>
         <span className="wordmark">EVIE</span>
         <button className="btn small schedule-btn" onClick={onSchedule}><Icon name="calendar" size={18} />Schedule</button>
+        <button className="btn small" onClick={onInvite} aria-label="Invite family"><Icon name="users" size={18} /><span className="hide-narrow">Invite</span></button>
       </header>
       <h1 className="page-title">{circle.personName}’s day</h1>
 
       <div className="bento">
+        {showSetup && (
+          <GettingStarted
+            steps={steps}
+            onCarePlan={onCarePlan}
+            onInvite={onInvite}
+            onHide={() => { hideGettingStarted(circle.id); setSetupHidden(true); }}
+          />
+        )}
         {!loading && (
           <>
             <button className="tile tint-seizure" onClick={() => showType('seizure')}>
@@ -70,9 +93,13 @@ export default function Timeline({
               <span className="tile-value">{sleep ? hoursAndMinutes(sleep.minutes) : '—'}</span>
               <span className="tile-sub">{sleep?.entry.quality ? labelOf(SLEEP_QUALITY, sleep.entry.quality) : 'Not logged'}</span>
             </button>
-            <TodayMeds circle={circle} me={me} entries={entries} now={now} onSetUp={onCarePlan} />
-            <Handoff circle={circle} me={me} entries={entries} now={now} />
           </>
+        )}
+        {!loading && (circle.meds?.length > 0 || !showSetup) && (
+          <TodayMeds circle={circle} me={me} entries={entries} now={now} onSetUp={onCarePlan} />
+        )}
+        {!loading && (!empty || circle.schedule?.length > 0) && (
+          <Handoff circle={circle} me={me} entries={entries} now={now} />
         )}
 
         <button className="summary-card feature block-danger emergency-row" onClick={onEmergency}>
@@ -101,9 +128,11 @@ export default function Timeline({
 
         {!loading && groups.length === 0 && (
           <div className="empty">
-            {filter
-              ? 'No entries of this type yet.'
-              : 'Nothing logged yet. Tap Seizure or + in the bar below to add the first entry.'}
+            {olderExists
+              ? `Nothing ${filter ? 'of this type ' : ''}logged in the last ${historyDays} days.`
+              : filter
+                ? 'No entries of this type yet.'
+                : 'Nothing logged yet. Tap Seizure or + in the bar below to add the first entry.'}
           </div>
         )}
 
@@ -117,6 +146,13 @@ export default function Timeline({
             </div>
           </section>
         ))}
+
+        {!loading && olderExists && (
+          <div className="older no-print">
+            <p className="muted small">Showing the last {historyDays} days.</p>
+            {next && <button className="btn" onClick={() => onShowOlder(next)}>Show older entries</button>}
+          </div>
+        )}
       </section>
     </>
   );

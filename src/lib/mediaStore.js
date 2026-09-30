@@ -1,5 +1,6 @@
 // Clips and photos live only on the phone that took them (IndexedDB), so the app runs on the free Spark plan.
-const DB = 'evie-media';
+export const MEDIA_DB = 'evie-media';
+const DB = MEDIA_DB;
 const STORE = 'media';
 
 function open() {
@@ -11,14 +12,16 @@ function open() {
   });
 }
 
+// Each call opens, uses and closes its own connection, so clearing this phone (deleteDatabase)
+// is never blocked by a connection left open.
 async function run(mode, fn) {
   const db = await open();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, mode);
     const req = fn(tx.objectStore(STORE));
-    tx.oncomplete = () => resolve(req.result);
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
+    tx.oncomplete = () => { db.close(); resolve(req.result); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.onabort = () => { db.close(); reject(tx.error); };
   });
 }
 

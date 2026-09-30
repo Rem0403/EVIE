@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { seizureStats, dayStrip, patterns, countByType, triggerCounts, clusterCount, previousSeizureCount, summaryReport } from './summary.js';
+import {
+  seizureStats, dayStrip, patterns, countByType, triggerCounts, clusterCount, previousSeizureCount, summaryReport,
+  historyNeeded, HISTORY_STEPS, nextHistoryStep,
+} from './summary.js';
 
 const at = (d, h = 0, m = 0) => new Date(2026, 8, d, h, m).getTime();
 const seizure = (occurredAt, extra = {}) => ({ type: 'seizure', occurredAt, durationSec: 60, seizureType: 'unknown', ...extra });
@@ -133,14 +136,36 @@ describe('patterns', () => {
   });
 });
 
+describe('history window', () => {
+  it('asks for enough days that the comparison with the previous period can count', () => {
+    for (const days of [7, 30, 90]) {
+      // The comparison needs an entry older than the previous period; one a day before it must be inside the window.
+      const now = at(28, 12);
+      const olderThanPrevious = now - (days * 2 + 1) * 24 * 3600 * 1000;
+      expect(historyNeeded(days) * 24 * 3600 * 1000).toBeGreaterThan(now - olderThanPrevious);
+      const entries = [{ type: 'note', occurredAt: olderThanPrevious }];
+      expect(summaryReport(entries, days, now).compareText).toMatch(/vs previous/);
+    }
+    expect(historyNeeded(90)).toBe(210);
+  });
+  it('steps the timeline back through longer windows, then stops', () => {
+    expect(HISTORY_STEPS[0]).toBe(30);
+    expect(nextHistoryStep(30)).toBe(90);
+    expect(nextHistoryStep(100)).toBe(180);
+    expect(nextHistoryStep(210)).toBe(365);
+    expect(nextHistoryStep(730)).toBeNull();
+  });
+});
+
 describe('countByType', () => {
   it('counts every log type in display order, zero included', () => {
     expect(countByType([
       seizure(at(20, 7)),
       missed(at(20, 8)),
       { type: 'med', occurredAt: at(21, 8), status: 'given' },
+      { type: 'goal', occurredAt: at(21, 12), goalId: 'g1', result: 'own' },
       { type: 'note', occurredAt: at(21, 9) },
-    ])).toEqual([['seizure', 1], ['med', 2], ['sleep', 0], ['behavior', 0], ['note', 1]]);
+    ])).toEqual([['seizure', 1], ['med', 2], ['sleep', 0], ['behavior', 0], ['goal', 1], ['note', 1]]);
   });
 });
 

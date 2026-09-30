@@ -2,6 +2,7 @@ import {
   detailRows, diagnosisText, formatDuration, formatTime, labelOf, SEIZURE_TYPES, SLEEP_QUALITY, toLocalInput, TYPE_META,
 } from './format.js';
 import { LONG_SEIZURE_SEC } from './summary.js';
+import { practiceText } from './goals.js';
 
 const shortDate = (ms) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 export const fileDate = (ms = Date.now()) => toLocalInput(ms).slice(0, 10);
@@ -167,6 +168,13 @@ export function buildSummaryPdf(JsPDF, circle, r) {
     text(r.behaviorText);
     if (r.beforeText) text(`Often before a hard time: ${r.beforeText}`, { color: GRAY });
     if (r.helpedText) text(`What helped: ${r.helpedText}`, { color: GRAY });
+  }
+
+  heading('Goals');
+  if (!r.goals.length) text('No goal practice logged in this range.', { color: GRAY });
+  for (const g of r.goals) {
+    text(g.title, { bold: true, gap: 0 });
+    text(practiceText(g), { color: GRAY });
   }
 
   // Day by day as a table (the header repeats on a new page).
