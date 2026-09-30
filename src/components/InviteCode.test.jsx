@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+vi.mock('../data/circles.js', () => ({ newJoinCode: vi.fn() }));
+
 import InviteSheet from './InviteCode.jsx';
 
 const circle = { personName: 'Maya', joinCode: 'MAYA-7KQ4-M2XP' };

@@ -151,7 +151,8 @@ docs/brand-guidelines.md  voice, messaging and visual identity
 - Replaced join codes are deleted, since they include the person's first name. Invite links put the code after `#`, which browsers never send to the server.
 - The site sends security headers (no framing by other sites, `nosniff`, a strict referrer policy, a permissions policy) and a Content-Security-Policy in report-only mode; see `firebase.json`.
 - App Check (reCAPTCHA Enterprise) starts when `VITE_APPCHECK_SITE_KEY` is set, so only the real app can use the database.
-- CI fails on known vulnerabilities in shipped dependencies, runs CodeQL static analysis, and pins every GitHub Action to an exact commit; Dependabot proposes updates.
+- CI fails on known vulnerabilities in shipped dependencies and pins every GitHub Action to an exact commit; Dependabot proposes updates. CodeQL static analysis runs through GitHub's Default setup (repo Settings → Code security), not a workflow file: GitHub refuses to run both.
+- Unit tests run with the Firebase config blanked (`vite.config.js`), so a test that forgets to mock the data layer fails locally just as it would in CI.
 - The **Privacy** page (More, and the welcome screen) says what's kept, where, who sees it, and how to remove it.
 - Circles created before the longer codes get a new code the first time a member opens the app. The old 4-digit code then stops working for new joins.
 - Videos and photos never leave the phone they were added on.

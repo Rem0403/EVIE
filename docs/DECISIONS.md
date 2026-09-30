@@ -50,6 +50,8 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 - **Leaving and signing out clear the phone:** Firestore's offline copy, the media kept only on this phone and EVIE's saved settings (not appearance), after syncing. It is never done automatically on an error: a misconfigured App Check also returns "permission denied", and wiping then would destroy unsynced logs and phone-only videos. A removed member lands on the welcome screen, which offers **Clear EVIE data from this phone**.
 - **Deleting a circle:** whoever started it deletes everything in batches of 400, then the circle last (the rules check membership against it). That person can therefore delete others' entries too; they're the family's data owner.
 - **Headers:** enforced now; the CSP is report-only until it's been checked in a phone's browser console with Google sign-in, App Check and sync, then it moves to `Content-Security-Policy`. `Cross-Origin-Opener-Policy` is `same-origin-allow-popups` because `same-origin` breaks Google's sign-in pop-up.
+- **CodeQL runs through GitHub's Default setup,** not `.github/workflows/codeql.yml` (removed 2026-09-30): with Default setup on, GitHub rejects results from a workflow file, which failed every run. Default setup is maintained by GitHub and needs no pinned versions; set its query suite to Extended.
+- **Tests blank the Firebase config** (`vite.config.js` `test.env`): a test that loaded the real Firebase passed locally, using `.env.local`, and failed in CI.
 - **Not done in code (console work):** turning on App Check enforcement, restricting the API key, a usage budget alert, and GitHub secret scanning. An optional app lock (PIN) is a possible later feature.
 
 **Exit syncs, then shows a closing screen.** 2026-09-30.
