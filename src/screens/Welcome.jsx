@@ -1,36 +1,29 @@
 import { useState } from 'react';
 import { createCircle, joinCircleByCode } from '../data/circles.js';
-import Setup from './Setup.jsx';
+import Setup, { photoToSave } from './Setup.jsx';
+import PhotoPicker from '../components/PhotoPicker.jsx';
+import { CircleIcon } from '../components/CircleIconPicker.jsx';
+import { circleIconOf } from '../lib/circleIcon.js';
 import { normalizeJoinCode } from '../lib/codes.js';
 import { seedDemo } from '../data/demo.js';
 import { withTimeout } from '../lib/timeout.js';
-import Icon from '../components/Icon.jsx';
 import { InviteCode } from '../components/InviteCode.jsx';
 
 const NETWORK_TIMEOUT_MS = 15000;
-// Each letter and its word share an entry-type color. No purple: that's only ever the seizure color.
-const NAME = [
-  ['E', 'Event', 'med'],
-  ['V', 'Video', 'sleep'],
-  ['I', 'Information', 'behavior'],
-  ['E', 'Exchange', 'handoff'],
-];
-const POINTS = [
-  ['seizure', 'Seizures', 'Time them, add a video, spot patterns'],
-  ['med', 'Medications', 'Today’s doses, given or missed'],
-  ['behavior', 'Everyone in the loop', 'Behavior, goals, handoffs and the care plan'],
-];
 const OFFLINE = "You're offline. Connect to the internet and try again.";
 
 // inviteCode: from an invite link, opens the join form with it filled in.
 // onGoogle: signs in with Google and resolves to an error message, or '' when done.
 // notice: a message from before, like having been removed from a circle.
+// googlePhoto: the Google account picture, once signed in with Google; offered as your photo.
+// onSignOut: signs out of Google on this phone (App asks first, then clears the phone).
 export default function Welcome({
-  uid, onJoined, inviteCode = '', email = '', onGoogle, notice = '', onPrivacy, onClearPhone,
+  uid, onJoined, inviteCode = '', email = '', googlePhoto = '', onGoogle, onSignOut, notice = '', onPrivacy, onClearPhone,
 }) {
   const [mode, setMode] = useState(inviteCode ? 'join' : null); // null | 'create' | 'join' | 'created'
   const [name, setName] = useState('');
   const [code, setCode] = useState(inviteCode);
+  const [photo, setPhoto] = useState(googlePhoto);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
@@ -48,7 +41,7 @@ export default function Welcome({
     setBusy(true);
     setError('');
     try {
-      const circle = await withTimeout(joinCircleByCode({ uid, displayName: name.trim(), code }), NETWORK_TIMEOUT_MS);
+      const circle = await withTimeout(joinCircleByCode({ uid, displayName: name.trim(), code, photo: photoToSave(photo, googlePhoto) }), NETWORK_TIMEOUT_MS);
       if (circle) onJoined(circle, name.trim());
       else setError('No circle found with that code.');
     } catch (err) {
@@ -91,6 +84,7 @@ export default function Welcome({
     return (
       <Setup
         uid={uid}
+        googlePhoto={googlePhoto}
         onCancel={() => { setMode(null); setError(''); }}
         onCreated={(circle, yourName) => { setCreated(circle); setName(yourName); setMode('created'); }}
       />
@@ -100,6 +94,7 @@ export default function Welcome({
   if (mode === 'created') {
     return (
       <section className="stack">
+        <CircleIcon icon={circleIconOf(created)} size={72} />
         <h1>Circle created</h1>
         <p className="muted">
           Share this code with family and caregivers so they can join {created.personName}'s timeline.
@@ -123,6 +118,10 @@ export default function Welcome({
           Your name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mom" required maxLength={30} />
         </label>
+        <fieldset className="photo-field">
+          <legend>Your photo <span className="muted">(optional)</span></legend>
+          <PhotoPicker name={name} photo={photo} googlePhoto={googlePhoto} onChange={setPhoto} size={80} />
+        </fieldset>
         {error && <p className="error">{error}</p>}
         <button className="btn primary" disabled={busy}>{busy ? 'Joining…' : 'Join circle'}</button>
         <button type="button" className="btn ghost" onClick={() => { setMode(null); setError(''); }}>Back</button>
@@ -133,32 +132,22 @@ export default function Welcome({
   return (
     <section className="stack welcome">
       <header className="welcome-hero">
-        <span className="welcome-mark" aria-hidden="true"><Icon name="seizure" size={38} /></span>
-        <h1 className="welcome-title">
-          {NAME.map(([letter, , color]) => <span key={color} className={`c-${color}`}>{letter}.</span>)}
-        </h1>
-        <p className="welcome-sub">
-          {NAME.map(([, word, color], i) => (
-            <span key={color}>{i === 2 && '& '}<span className={`c-${color}`}>{word}</span>{i < 3 && ' '}</span>
-          ))}
-        </p>
+        <h1 className="welcome-title">EVIE</h1>
+        <p className="welcome-sub">Event Video & Information Exchange</p>
       </header>
-      <p className="lead">One shared record for everyone who cares for them.</p>
+      <p className="lead">Seizures, medications and daily care, in one record for everyone who looks after them.</p>
       {notice && <p className="notice" role="status">{notice}</p>}
-      <ul className="welcome-points" aria-label="What EVIE keeps">
-        {POINTS.map(([type, title, text]) => (
-          <li key={type} className={`type-${type}`}>
-            <span className="welcome-icon" aria-hidden="true"><Icon name={type} size={22} /></span>
-            <span><strong>{title}</strong><span className="muted small">{text}</span></span>
-          </li>
-        ))}
-      </ul>
       <button className="btn primary big" onClick={() => setMode('create')}>Start a care circle</button>
       <button className="btn big" onClick={() => setMode('join')}>Join with a code</button>
       {error && <p className="error">{error}</p>}
       <div className="welcome-more">
         {email
-          ? <p className="muted small">Signed in with Google as {email}</p>
+          ? (
+            <div className="signed-in">
+              <p className="muted small">Signed in with Google as {email}</p>
+              {onSignOut && <button className="link-btn" onClick={onSignOut}>Sign out</button>}
+            </div>
+          )
           : <button className="btn" onClick={handleGoogle} disabled={busy}>Continue with Google</button>}
         <button className="btn ghost" onClick={handleDemo} disabled={busy}>{busy ? 'Please wait…' : 'Try a demo with sample data'}</button>
       </div>

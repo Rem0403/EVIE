@@ -15,3 +15,15 @@ export function scrollToTop() {
 export function scrollToId(id) {
   document.getElementById(id)?.scrollIntoView?.({ behavior: behavior(), block: 'start' });
 }
+
+// Keeps `el` where it is on screen for `ms` while content above it grows or shrinks, like when
+// opening one accordion section closes a long one above it. Chrome does this by itself (scroll
+// anchoring); Safari doesn't, so without it the tapped header would shoot off the top.
+export function holdInPlace(el, ms) {
+  const top = el.getBoundingClientRect().top;
+  const end = performance.now() + ms;
+  (function step() {
+    window.scrollBy?.(0, el.getBoundingClientRect().top - top);
+    if (performance.now() < end) requestAnimationFrame(step);
+  })();
+}

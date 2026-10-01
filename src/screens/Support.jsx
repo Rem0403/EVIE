@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { GUIDE, GUIDE_NOTE } from '../lib/supportGuide.js';
 import Tabs, { tabPanelProps } from '../components/Tabs.jsx';
 import {
   mailtoHref, RESOURCE_CATEGORIES, RESOURCE_STATUS, safeUrl, sortResources, telHref,
 } from '../lib/resources.js';
 import { labelOf, toLocalInput } from '../lib/format.js';
+import Icon from '../components/Icon.jsx';
+import { holdInPlace } from '../lib/scroll.js';
 
 const shortDate = (ymd) => {
   const [y, m, d] = ymd.split('-').map(Number);
@@ -17,10 +19,11 @@ export default function Support({ circle, resources, onBack, onAdd, onEdit }) {
   const saved = new Set(resources.map((r) => r.name.trim().toLowerCase()));
   // A family with nothing saved yet starts on the guide; after that, on their own list.
   const [tab, setTab] = useState(resources.length ? 'resources' : 'guide');
+  const [openStage, setOpenStage] = useState(GUIDE[0].id); // one section open at a time
 
   return (
     <section className="stack">
-      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}>← Back</button>
+      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}><Icon name="back" size={16} />Back</button>
       <div>
         <h1>Support</h1>
         <p className="muted">Programs, services and groups for {circle.personName}. Everyone in the circle can add and update them.</p>
@@ -60,7 +63,7 @@ export default function Support({ circle, resources, onBack, onAdd, onEdit }) {
                 {(tel || web || mail) && (
                   <div className="resource-links">
                     {tel && <a className="btn small" href={tel}>Call {r.phone}</a>}
-                    {web && <a className="btn small" href={web} target="_blank" rel="noopener noreferrer">Website ↗</a>}
+                    {web && <a className="btn small" href={web} target="_blank" rel="noopener noreferrer">Website<Icon name="external" size={13} /></a>}
                     {mail && <a className="btn small" href={mail}>Email</a>}
                   </div>
                 )}
@@ -75,17 +78,17 @@ export default function Support({ circle, resources, onBack, onAdd, onEdit }) {
         <div {...tabPanelProps('support', 'guide')} className="stack tab-panel">
           <h2>Start here</h2>
           <p className="muted small">{GUIDE_NOTE}</p>
-          {GUIDE.map((stage, i) => (
-            <details key={stage.id} className="card guide-stage" open={i === 0}>
-              <summary><h3>{stage.title}</h3></summary>
+          {GUIDE.map((stage) => (
+            <GuideStage key={stage.id} stage={stage} open={openStage === stage.id}
+              onToggle={() => setOpenStage(openStage === stage.id ? null : stage.id)}>
               {stage.items.map((item) => (
                 <div key={item.id} className="guide-item">
                   <strong>{item.name}</strong>
                   <p>{item.text}</p>
                   <div className="resource-links">
-                    {item.url && <a className="btn small" href={item.url} target="_blank" rel="noopener noreferrer">Official site ↗</a>}
+                    {item.url && <a className="btn small" href={item.url} target="_blank" rel="noopener noreferrer">Official site<Icon name="external" size={13} /></a>}
                     {saved.has(item.name.toLowerCase())
-                      ? <span className="saved">✓ In our resources</span>
+                      ? <span className="saved with-icon"><Icon name="check" size={14} />In our resources</span>
                       : (
                         <button className="btn small" aria-label={`Save ${item.name} to our resources`}
                           onClick={() => onAdd({ name: item.name, category: item.category, url: item.url || '' })}>
@@ -95,10 +98,43 @@ export default function Support({ circle, resources, onBack, onAdd, onEdit }) {
                   </div>
                 </div>
               ))}
-            </details>
+            </GuideStage>
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+// One section of Start here, opening like beui.dev's bouncy accordion: the height springs open
+// (a slight overshoot that settles), the text fades in, the chevron turns. The springs are CSS
+// (styles.css --spring-*), so reduced motion turns them off like every other animation. The
+// content's height is measured, and re-measured if it changes, so the spring has a target.
+function GuideStage({ stage, open, onToggle, children }) {
+  const inner = useRef(null);
+  const [height, setHeight] = useState(0);
+  useLayoutEffect(() => {
+    const el = inner.current;
+    setHeight(el.offsetHeight);
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => setHeight(el.offsetHeight));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const bodyId = `guide-${stage.id}`;
+  return (
+    <section className={`card guide-stage${open ? ' open' : ''}`}>
+      <h3>
+        <button type="button" className="guide-toggle" aria-expanded={open} aria-controls={bodyId}
+          onClick={(e) => { holdInPlace(e.currentTarget, 650); onToggle(); }}>
+          {stage.title}
+          <Icon name="chevron" size={16} className="disclose" />
+        </button>
+      </h3>
+      {/* Closed content is inert: out of reach for Tab and screen readers, though it's still on the page. */}
+      <div id={bodyId} className="guide-body" style={{ height: open ? height : 0 }} {...(open ? {} : { inert: '' })}>
+        <div ref={inner}>{children}</div>
+      </div>
     </section>
   );
 }

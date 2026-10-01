@@ -93,7 +93,7 @@ const goalLog = (extra = {}) => render(
 
 it('logs goal practice against one goal, with how it went, apart from notes', () => {
   goalLog();
-  expect(screen.getByRole('heading', { name: 'Log goal practice' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Log goal' })).toBeTruthy();
   expect(screen.queryByText('Old goal')).toBeNull(); // only goals being worked on
   fireEvent.click(screen.getByText('Save'));
   expect(screen.getByText('Choose which goal.')).toBeTruthy();

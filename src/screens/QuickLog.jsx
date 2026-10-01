@@ -4,7 +4,8 @@ import {
   BEHAVIOR_BEFORE, BEHAVIOR_HELPED, BEHAVIOR_KINDS, BEHAVIOR_LENGTH, defaultSleepTimes, fromLocalInput, INTENSITY,
   MED_STATUS, SLEEP_QUALITY, toLocalInput, TYPE_META,
 } from '../lib/format.js';
-import { addEntry } from '../data/entries.js';
+import { addEntry, deleteEntry } from '../data/entries.js';
+import { showToast } from '../lib/toast.js';
 import Icon from '../components/Icon.jsx';
 import AttachmentUpload from '../components/AttachmentUpload.jsx';
 import { saveAttachments } from '../lib/attachments.js';
@@ -87,7 +88,8 @@ export default function QuickLog({ circle, me, type, entries, goals = [], goalId
       return;
     }
     if (!files.length) {
-      addEntry(circle.id, entry);
+      const id = addEntry(circle.id, entry);
+      showToast(`${TYPE_META[type].label} logged`, () => deleteEntry(circle.id, id));
       onDone();
       return;
     }
@@ -120,7 +122,7 @@ export default function QuickLog({ circle, me, type, entries, goals = [], goalId
   return (
     <form className="stack" onSubmit={save}>
       <h1 className={`with-icon type-${type}`}>
-        <Icon name={type} size={28} />Log {type === 'goal' ? 'goal practice' : meta.label.toLowerCase()}
+        <Icon name={type} size={28} />Log {meta.label.toLowerCase()}
       </h1>
 
       {type === 'goal' && (

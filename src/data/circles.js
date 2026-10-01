@@ -9,7 +9,9 @@ const codeRef = (code) => doc(db, 'joinCodes', code);
 
 // The circle, your member doc and its join code are written together; the rules check them as one.
 // profile and meds are the care team and medications from setup, when it filled them in.
-export async function createCircle({ uid, displayName, personName, profile, meds }) {
+// photo is your profile picture (see lib/avatar.js), when you chose one. icon, iconColor and
+// iconPhoto are the circle's icon (see lib/circleIcon.js).
+export async function createCircle({ uid, displayName, personName, profile, meds, photo, icon, iconColor, iconPhoto }) {
   const ref = doc(circlesRef);
   const joinCode = generateJoinCode(personName);
   const circle = {
@@ -20,17 +22,19 @@ export async function createCircle({ uid, displayName, personName, profile, meds
     createdAt: Timestamp.now(),
     ...(profile ? { profile } : {}),
     ...(meds ? { meds } : {}),
+    ...(icon ? { icon, iconColor } : {}),
+    ...(iconPhoto ? { iconPhoto } : {}),
   };
   const batch = writeBatch(db);
   batch.set(ref, circle);
-  batch.set(doc(ref, 'members', uid), { displayName, joinedAt: Timestamp.now() });
+  batch.set(doc(ref, 'members', uid), { displayName, joinedAt: Timestamp.now(), ...(photo ? { photo } : {}) });
   batch.set(codeRef(joinCode), { circleId: ref.id });
   await batch.commit();
   return { id: ref.id, ...circle };
 }
 
 // Returns the circle, or null if the code doesn't match one.
-export async function joinCircleByCode({ uid, displayName, code }) {
+export async function joinCircleByCode({ uid, displayName, code, photo }) {
   const normalized = normalizeJoinCode(code);
   if (!normalized) return null;
   const found = await getDoc(codeRef(normalized));
@@ -39,7 +43,7 @@ export async function joinCircleByCode({ uid, displayName, code }) {
   // The member doc carries the code so the rules can check it before adding you.
   const batch = writeBatch(db);
   batch.update(ref, { memberIds: arrayUnion(uid) });
-  batch.set(doc(ref, 'members', uid), { displayName, joinCode: normalized, joinedAt: Timestamp.now() });
+  batch.set(doc(ref, 'members', uid), { displayName, joinCode: normalized, joinedAt: Timestamp.now(), ...(photo ? { photo } : {}) });
   try {
     await batch.commit();
   } catch (err) {
@@ -99,14 +103,27 @@ export async function findMyCircle(uid) {
   return { circle: { id: newest.id, ...newest.data() }, name: member.data()?.displayName || '' };
 }
 
+// Your member record, live, so a new profile picture shows at once. Null if there isn't one
+// (circles from before member records existed).
+export function subscribeMember(circleId, uid, onChange, onError) {
+  return onSnapshot(doc(circlesRef, circleId, 'members', uid), (snap) => onChange(snap.exists() ? snap.data() : null), onError);
+}
+
+// Your profile picture, or '' when you removed it. Queued like entries, so it works offline.
+export function setMyPhoto(circleId, uid, photo) {
+  return updateDoc(doc(circlesRef, circleId, 'members', uid), { photo });
+}
+
 // Whoever started the circle: the first member. Only they can remove people (see firestore.rules).
 export const ownerOf = (circle) => circle.memberIds?.[0] || null;
 
-// Everyone in the circle, in the order they joined, with the name each chose.
+// Everyone in the circle, in the order they joined, with the name and photo each chose.
 export async function listMembers(circle) {
   const snap = await getDocs(collection(circlesRef, circle.id, 'members'));
-  const names = new Map(snap.docs.map((d) => [d.id, d.data().displayName]));
-  return (circle.memberIds || []).map((uid) => ({ uid, name: names.get(uid) || 'Someone' }));
+  const records = new Map(snap.docs.map((d) => [d.id, d.data()]));
+  return (circle.memberIds || []).map((uid) => ({
+    uid, name: records.get(uid)?.displayName || 'Someone', photo: records.get(uid)?.photo || '',
+  }));
 }
 
 // A fresh code; the old one stops working for new joins. Anyone in the circle can do this.

@@ -43,7 +43,7 @@ it('never turns a stored javascript: or data: link into something tappable', () 
     { ...waiver, id: 'x3', name: 'Evil 3', url: 'data:text/html,<script>alert(1)</script>', email: '', phone: '' },
   ];
   render(<Support circle={circle} resources={hostile} onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
-  expect(screen.queryByText('Website ↗')).toBeNull();
+  expect(screen.queryByRole('link', { name: 'Website' })).toBeNull();
   expect(screen.queryByText('Email')).toBeNull();
   for (const a of document.querySelectorAll('a')) expect(a.getAttribute('href')).not.toMatch(/^\s*(javascript|data):/i);
 });
@@ -51,7 +51,7 @@ it('never turns a stored javascript: or data: link into something tappable', () 
 it('shows a stored link only as a clean web address', () => {
   render(<Support circle={circle} resources={[{ ...waiver, url: 'example.org/help', email: 'help@example.org' }]}
     onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
-  expect(screen.getByText('Website ↗').getAttribute('href')).toBe('https://example.org/help');
+  expect(screen.getByRole('link', { name: 'Website' }).getAttribute('href')).toBe('https://example.org/help');
   expect(screen.getByText('Email').getAttribute('href')).toBe('mailto:help@example.org');
 });
 
@@ -59,7 +59,7 @@ it('marks guide items already saved, and saves others prefilled', () => {
   const onAdd = vi.fn();
   render(<Support circle={circle} resources={[waiver]} onBack={vi.fn()} onAdd={onAdd} onEdit={vi.fn()} />);
   fireEvent.click(screen.getByRole('tab', { name: 'Start here' }));
-  expect(screen.getByText('✓ In our resources')).toBeTruthy();
+  expect(screen.getByText('In our resources')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Save Call or text 211 to our resources' }));
   expect(onAdd).toHaveBeenCalledWith({ name: 'Call or text 211', category: 'services', url: 'https://www.211.org/' });
 });
@@ -109,4 +109,17 @@ it('opens on the guide for a family with nothing saved yet', () => {
   render(<Support circle={circle} resources={[]} onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
   expect(screen.getByRole('tab', { name: 'Start here' }).getAttribute('aria-selected')).toBe('true');
   expect(screen.getByRole('tabpanel', { name: 'Start here' })).toBeTruthy();
+});
+
+it('opens one Start here section at a time, and keeps closed ones out of reach', () => {
+  render(<Support circle={circle} resources={[]} onBack={vi.fn()} onAdd={vi.fn()} onEdit={vi.fn()} />);
+  const [first, second] = document.querySelectorAll('.guide-toggle');
+  expect(first.getAttribute('aria-expanded')).toBe('true'); // the first section starts open
+  expect(document.getElementById(second.getAttribute('aria-controls')).hasAttribute('inert')).toBe(true);
+  fireEvent.click(second);
+  expect(second.getAttribute('aria-expanded')).toBe('true');
+  expect(first.getAttribute('aria-expanded')).toBe('false'); // opening one closes the other
+  expect(document.getElementById(first.getAttribute('aria-controls')).hasAttribute('inert')).toBe(true);
+  fireEvent.click(second);
+  expect(second.getAttribute('aria-expanded')).toBe('false'); // and the open one can be closed
 });

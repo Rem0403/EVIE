@@ -14,6 +14,21 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch((err) => console.error('service worker', err));
 }
 
+const RELOADED = 'evie-reloaded';
+function reloadOnce() {
+  try {
+    if (sessionStorage.getItem(RELOADED)) return false;
+    sessionStorage.setItem(RELOADED, '1');
+  } catch {
+    return false; // storage blocked: can't tell if this already reloaded, so don't risk a loop
+  }
+  location.reload();
+  return true;
+}
+function forgetReload() {
+  try { sessionStorage.removeItem(RELOADED); } catch { /* storage blocked */ }
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 const missing = missingConfig(import.meta.env);
 
@@ -34,6 +49,18 @@ if (missing.length) {
           <App />
         </ErrorBoundary>
       </React.StrictMode>,
+    );
+    forgetReload();
+  }).catch((err) => {
+    // Usually a page from before an update asking for files the update replaced, which a fresh
+    // load fixes. Reloads once only, so a real outage shows a message instead of looping.
+    console.error('loading EVIE', err);
+    if (reloadOnce()) return;
+    root.render(
+      <div className="center">
+        <p>EVIE couldn't open. Check your connection and try again.</p>
+        <button className="btn primary" onClick={() => location.reload()}>Try again</button>
+      </div>,
     );
   });
 }

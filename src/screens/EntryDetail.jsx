@@ -44,7 +44,7 @@ export default function EntryDetail({ circle, entry, me, onBack }) {
 
   return (
     <section className="stack">
-      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}>← Back</button>
+      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}><Icon name="back" size={16} />Back</button>
       <h1 className={`with-icon type-${entry.type}`}><Icon name={entry.type} size={28} />{meta.label}</h1>
 
       <Media entry={entry} kind="clip" preload="metadata" shareable />

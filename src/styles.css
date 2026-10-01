@@ -198,8 +198,10 @@ a { color: var(--accent); }
 
 /* Forms */
 label { display: flex; flex-direction: column; gap: 6px; font-weight: 500; font-size: 0.95rem; }
+/* 16px text in fields: iPhone Safari zooms the whole page in when a field under 16px is tapped,
+   and since EVIE never reloads between screens, that zoom stays on every screen after it. */
 input, textarea, select {
-  font: inherit; font-weight: 400; min-height: var(--tap); padding: 10px 14px;
+  font: inherit; font-size: 1rem; font-weight: 400; min-height: var(--tap); padding: 10px 14px;
   border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); color: var(--text);
   transition: border-color 200ms, box-shadow 200ms;
 }
@@ -218,29 +220,13 @@ progress { width: 100%; height: 8px; accent-color: var(--accent); }
 .chip.on { background: var(--chip, var(--text)); color: var(--bg); border-color: var(--chip, var(--text)); }
 
 /* Welcome */
-/* Welcome: a centered version of the home brand row, then the three things EVIE keeps, then the two choices. */
+/* Welcome: the name in seizure purple, what it stands for, one sentence, then the two choices. */
 .welcome { width: 100%; max-width: 440px; margin: 0 auto; padding-top: 8vh; }
 .welcome-hero { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-.welcome-mark {
-  display: grid; place-items: center; width: 76px; height: 76px; margin-bottom: 10px; border-radius: 24px;
-  background: var(--seizure-fill); color: #ffffff;
-}
-.welcome-title { font-size: 44px; font-weight: 800; line-height: 1.1; letter-spacing: 0.08em; }
-.welcome-sub { font-size: 16px; font-weight: 600; color: var(--muted); }
-.welcome-sub [class^="c-"] { font-weight: 700; }
-.c-med { color: var(--med); }
-.c-sleep { color: var(--sleep); }
-.c-behavior { color: var(--behavior); }
-.c-handoff { color: var(--handoff); }
+.welcome-title { font-size: 48px; font-weight: 800; line-height: 1.1; color: var(--seizure); }
+.welcome-sub { font-size: 16px; font-weight: 500; color: var(--muted); }
 .lead { font-size: 1.125rem; color: var(--muted); margin-bottom: 12px; }
-.welcome .lead { text-align: center; margin: 4px 0 0; text-wrap: balance; }
-.welcome-points {
-  list-style: none; margin: 8px 0 12px; padding: 4px 16px; border-radius: 24px; background: var(--surface);
-}
-.welcome-points li { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
-.welcome-points li + li { border-top: 1px solid var(--separator); }
-.welcome-points strong { display: block; font-weight: 700; }
-.welcome-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; flex: none; background: var(--fill); }
+.welcome .lead { text-align: center; margin: 12px 0 20px; text-wrap: balance; }
 .join-code {
   font-family: var(--font); font-size: clamp(1.5rem, 7.5vw, 2.6rem); letter-spacing: 0.06em; text-align: center;
   padding: 24px 12px; background: var(--surface); border: 2px dashed var(--lavender-line); border-radius: var(--radius);
@@ -269,9 +255,6 @@ progress { width: 100%; height: 8px; accent-color: var(--accent); }
 .feature-title { font-size: 18px; font-weight: 700; }
 
 /* Pastel icon circles: decoration only (every card also names what it shows). */
-.icon-circle { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; flex: none; color: #0e0e11; }
-.ic-seizure { background: var(--ic-seizure); }
-.ic-sleep { background: var(--ic-sleep); }
 
 /* Color-block cards */
 .block-hero, .summary-card.block-hero { background: var(--hero); color: var(--on-hero); box-shadow: inset 0 0 0 1px var(--hero-edge); }
@@ -338,7 +321,7 @@ button.summary-card:active { background: var(--fill); }
 /* Floating nav + chooser */
 .bottom-nav {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom));
-  width: calc(100% - 24px); max-width: 456px; height: 72px; z-index: 5;
+  width: calc(100% - 24px); max-width: 456px; height: 72px; z-index: 35;   /* above sheets and previews: the seizure button is always reachable */
   display: flex; align-items: center; justify-content: space-around; padding: 0 10px;
   border-radius: 36px; background: var(--nav-bg); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
 }
@@ -373,6 +356,12 @@ button.summary-card:active { background: var(--fill); }
   content: ''; position: absolute; top: 10px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: var(--pill); background: var(--border);
 }
 .sheet .btn { min-height: 72px; font-size: 1.05rem; }
+/* Log menu: icon, name and what it's for, all centered; an odd one out at the end spans the row. */
+.sheet .log-type { flex-direction: column; justify-content: center; gap: 4px; padding: 14px 12px; text-align: center; }
+.sheet .log-type:last-child:nth-child(odd) { grid-column: span 2; }
+.log-type-name { font-weight: 700; }
+.log-type-about { font-size: 13px; font-weight: 400; line-height: 1.35; color: var(--muted); }
+body:has(.bottom-nav) .sheet { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }   /* room for the nav floating over it */
 
 /* Seizure timer */
 .timer {
@@ -383,6 +372,21 @@ button.summary-card:active { background: var(--fill); }
 }
 .stop-btn { min-height: 120px; font-size: 1.6rem; background: var(--seizure-fill); border-color: var(--seizure-fill); color: #fff; border-radius: 32px; }
 .hint { text-align: center; color: var(--muted); }
+/* The running timer fills the screen (there's no nav on it): Cancel top left, the time in the
+   middle, Stop and Emergency info at the bottom. */
+.app:has(.seizure-run) { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.seizure-run { display: flex; flex-direction: column; gap: 12px; min-height: calc(100dvh - 36px - env(safe-area-inset-bottom)); }
+.run-cancel { align-self: flex-start; }
+.run-clock { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; text-align: center; }
+.run-clock .timer { padding: 0; }
+.run-clock p { margin: 0; }
+.run-status { font-weight: 600; color: var(--seizure); }
+.run-adjust { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; }
+@media (max-height: 640px) {   /* the smallest iPhones: everything, alert included, still fits on one screen */
+  .run-clock .timer { font-size: 3.75rem; }
+  .run-adjust { margin-top: 4px; }
+  .seizure-run .stop-btn { min-height: 84px; }
+}
 
 /* Detail */
 .detail-rows { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; }
@@ -428,6 +432,8 @@ video { background: #000; }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(100%); } }
+.app { overflow-x: clip; }   /* nothing ever adds a sideways scrollbar; clip (not hidden) keeps the sticky header working */
+.sheet { overscroll-behavior: contain; }   /* dragging a sheet down doesn't pull-to-refresh the page */
 /* Wider screens (tablet, laptop): use the space. Phones are unchanged.
    Home becomes a two-column dashboard; forms and detail screens widen to a comfortable reading width. */
 @media (min-width: 760px) {
@@ -528,8 +534,34 @@ video { background: #000; }
 .resource-note { color: var(--muted); overflow-wrap: anywhere; white-space: pre-wrap; }
 .empty-inline { margin: 0; }
 .guide-stage { padding: 0; }
-.guide-stage summary { cursor: pointer; padding: 16px 18px; list-style-position: inside; min-height: var(--tap); }
-.guide-stage summary h3 { display: inline; font-family: var(--font); font-weight: 400; font-size: 1.2rem; margin: 0; }
+/* Start here: a single-open accordion after beui.dev's bouncy accordion, in plain CSS. Springs as
+   linear() curves (beui's settings: open 0.58s bounce 0.32, close 0.46s bounce 0.26, chevron 0.42s
+   bounce 0.28), each overshooting a few percent and settling. Made by a damped-spring formula; off
+   under reduced motion like everything else. Our own chevron, not the browser's ▶ marker, which
+   iPhone draws as an emoji. */
+:root {
+  --spring-open: linear(0, 0.029, 0.102, 0.202, 0.316, 0.434, 0.549, 0.654, 0.747, 0.827, 0.893, 0.946, 0.986, 1.015, 1.035, 1.047, 1.053, 1.054, 1.052, 1.048, 1.043, 1.036, 1.03, 1.024, 1.018, 1.013, 1.009, 1.005, 1.003, 1.001, 0.999, 0.998, 0.997, 0.997, 0.997, 0.997, 0.997, 0.998, 0.998, 0.998, 1);   /* overshoot 5.4% */
+  --spring-close: linear(0, 0.024, 0.086, 0.172, 0.27, 0.374, 0.476, 0.572, 0.659, 0.737, 0.804, 0.861, 0.907, 0.944, 0.973, 0.994, 1.01, 1.021, 1.027, 1.031, 1.032, 1.031, 1.029, 1.026, 1.023, 1.02, 1.017, 1.014, 1.011, 1.008, 1.006, 1.004, 1.003, 1.002, 1.001, 1, 1, 0.999, 0.999, 0.999, 1);   /* overshoot 3.2% */
+  --spring-chevron: linear(0, 0.026, 0.091, 0.181, 0.285, 0.393, 0.498, 0.598, 0.687, 0.766, 0.833, 0.888, 0.933, 0.968, 0.994, 1.013, 1.026, 1.034, 1.037, 1.038, 1.037, 1.035, 1.031, 1.027, 1.023, 1.019, 1.015, 1.012, 1.009, 1.006, 1.004, 1.002, 1.001, 1, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 1);   /* overshoot 3.8% */
+}
+.guide-stage h3 { margin: 0; }
+.guide-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: var(--tap);
+  padding: 16px 18px; border: none; background: none; color: inherit; text-align: left; cursor: pointer;
+  font-family: var(--font); font-weight: 400; font-size: 1.2rem;
+}
+.guide-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: inherit; }
+.guide-stage .disclose { flex: none; color: var(--muted); transform: rotate(90deg); transition: transform 420ms var(--ease); }
+.guide-stage.open .disclose { transform: rotate(270deg); }
+.guide-body { overflow: hidden; transition: height 460ms var(--ease); }
+/* The springs need linear() (iPhone iOS 17.2+); older phones keep the plain ease above. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .guide-stage .disclose { transition-timing-function: var(--spring-chevron); }
+  .guide-body { transition-timing-function: var(--spring-close); }
+  .guide-stage.open .guide-body { transition: height 580ms var(--spring-open); }
+}
+.guide-body > div { opacity: 0; transition: opacity 180ms ease-out; }
+.guide-stage.open .guide-body > div { opacity: 1; }
 .guide-item { padding: 12px 18px 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
 .guide-item p { margin: 0; line-height: 1.5; }
 .saved { color: var(--ok); font-weight: 500; font-size: 0.9rem; }
@@ -565,16 +597,88 @@ video { background: #000; }
    purple = seizures, gold = needs attention, red = emergency, everything else neutral. */
 .app-nav { padding-bottom: 150px; }   /* the floating nav never covers the last item or a Save button */
 .brand-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+/* Home header stays put while the dashboard scrolls; day labels stick just below it (48px buttons + 16px padding). */
+.app-home .brand-row { position: sticky; top: 0; z-index: 3; background: var(--bg); padding: 8px 0; margin-top: -4px; }
+.app-home .timeline-section .day-label { top: 64px; }
 .logo-mark {
   display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; flex: none;
   background: var(--seizure-fill); color: #ffffff;
 }
-.wordmark { font-weight: 800; letter-spacing: 0.12em; font-size: 15px; }
 .schedule-btn { margin-left: auto; }
+
+/* Profile pictures: round, like Contacts. Initials on a soft fill when there's no photo. */
+.avatar { display: inline-block; flex: none; border-radius: 50%; object-fit: cover; background: var(--fill); }
+.avatar.monogram {
+  display: inline-grid; place-items: center; color: var(--muted); font-weight: 600; letter-spacing: 0; line-height: 1;
+  box-shadow: inset 0 0 0 1px var(--separator); user-select: none;
+}
+.avatar-btn {   /* 44px: Apple's minimum touch target */
+  display: grid; place-items: center; width: 44px; height: 44px; flex: none; padding: 0; border: none; border-radius: 50%;
+  background: none; cursor: pointer; transition: transform var(--dur-press) var(--ease);
+}
+.avatar-btn:active { transform: scale(0.94); }
+.avatar-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.photo-picker { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.photo-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.photo-field { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.photo-field legend { padding: 0; margin-bottom: 8px; font-weight: 500; }
+.profile-sheet h2 { text-align: center; overflow-wrap: anywhere; }
+.profile-sheet > .muted { text-align: center; margin: 0; }
+.profile-row .with-icon { gap: 12px; text-align: left; }
+.profile-google { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; text-align: center; }
+.profile-google .error { margin: 0; }
+.signed-in { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; }
+.signed-in p { margin: 0; }
+.signed-in .link-btn { align-self: center; }
+
+/* The circle's icon: a Font Awesome symbol in dark ink on a soft color (the same in both themes,
+   since the colors are pastels), rounded like the EVIE mark it replaces. */
+.circle-icon {
+  display: inline-grid; place-items: center; flex: none; border-radius: 28%; line-height: 1; color: #2b2340;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08); user-select: none;
+}
+.circle-icon-btn {   /* 44px: Apple's minimum touch target */
+  display: grid; place-items: center; width: 44px; height: 44px; flex: none; margin: -2px; padding: 0; border: none;
+  border-radius: 14px; background: none; cursor: pointer; transition: transform var(--dur-press) var(--ease);
+}
+.circle-icon-btn:active { transform: scale(0.94); }
+.circle-icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.circle-icon-picker { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.circle-icon-picker > fieldset { align-self: stretch; }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 10px 6px; justify-items: center; }
+.icon-grid .swatch { min-width: 0; }
+img.circle-icon { object-fit: cover; background: var(--fill); }
+.circle-icon-picker > .tablist { align-self: center; }
+.circle-icon-panel { align-self: stretch; display: flex; flex-direction: column; gap: 20px; }
+.circle-icon-panel .photo-picker p { margin: 0; }
+.cropper-hole.rounded { border-radius: 28%; }   /* the circle icon's rounded square */
+.circle-icon-sheet h2 { text-align: center; overflow-wrap: anywhere; }
+
+/* Move and scale: full-screen and black like the iPhone photo cropper, in both themes. The photo sits
+   behind a round cut-out; outside it is dimmed. Above the nav, so nothing else can be tapped. */
+.cropper {
+  position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  background: #000; color: #fff; touch-action: none; overscroll-behavior: contain;
+  animation: fade var(--dur) ease-out both;
+}
+.cropper-title { margin: 0; text-align: center; font-size: 17px; font-weight: 600; }
+.cropper-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: grab; outline: none; user-select: none; }
+.cropper-stage:active { cursor: grabbing; }
+.cropper-img { position: absolute; left: 50%; top: 50%; max-width: none; pointer-events: none; user-select: none; }
+.cropper-hole {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.55);
+}
+.cropper-stage:focus-visible .cropper-hole { outline: 2px solid rgb(255 255 255 / 0.8); outline-offset: 4px; }   /* keyboard only */
+.cropper-zoom { display: block; max-width: 400px; width: 100%; margin: 0 auto; }
+.cropper-zoom input { width: 100%; min-height: 44px; accent-color: #fff; }
+.cropper .error { color: #ff8a80; text-align: center; margin: 0; }
+.cropper-actions { display: flex; gap: 12px; width: 100%; max-width: 400px; margin: 0 auto; }
+.cropper-actions .btn { flex: 1; }
 .page-title { margin-bottom: 16px; overflow-wrap: anywhere; }
 
 .tile { gap: 4px; min-height: 0; }
-.tile .icon-circle { width: 40px; height: 40px; margin-bottom: 8px; }
 .tile-label { font-size: 16px; }
 .tile-value { margin-top: 2px; padding-top: 0; font-size: 32px; }
 
@@ -624,11 +728,25 @@ video { background: #000; }
   .timeline-section { max-width: 760px; margin: 0 auto; }
 }
 
-/* Nav extras */
-.nav-toast {
-  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 6;
-  margin: 0; padding: 8px 14px; border-radius: var(--pill); background: var(--nav-bg); color: var(--on-nav); font-size: 14px;
+/* Toast: sits above the nav, slides up; swipe it down to close. The wrap centers it, since the
+   swipe moves the toast with an inline transform. */
+.toast-wrap {
+  position: fixed; left: 0; right: 0; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 6;
+  display: flex; justify-content: center; padding: 0 16px; pointer-events: none;
 }
+.toast {
+  display: flex; align-items: center; gap: 14px; max-width: 440px; pointer-events: auto;
+  padding: 6px 6px 6px 18px; min-height: var(--tap); border-radius: var(--pill); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  background: var(--nav-bg); color: var(--on-nav); font-size: 15px; animation: rise var(--dur-slide) var(--ease) both;
+}
+.toast:not(:has(.toast-undo)) { padding-right: 18px; }
+.toast-undo {
+  min-height: 40px; padding: 0 16px; border: none; border-radius: var(--pill); cursor: pointer;
+  background: var(--nav-active); color: #0e0e11; font: inherit; font-weight: 700;
+}
+
+
+/* Nav extras */
 .appearance { display: flex; flex-direction: column; gap: 10px; padding: 14px var(--pad); }
 
 /* Cards tinted to match their entry type, with a thin outline in the type color so they stand out
@@ -637,10 +755,6 @@ video { background: #000; }
 .tile.tint-sleep, .summary-card.tint-sleep { background: var(--sleep-card); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sleep) 35%, transparent); }
 .tile.tint-med, .summary-card.tint-med { background: var(--med-card); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--med) 35%, transparent); }
 .summary-card.tint-med.due { box-shadow: inset 0 0 0 2px var(--med); }
-.tint-seizure .icon-circle, .tint-sleep .icon-circle, .tint-med .icon-circle { background: var(--surface); }
-.tint-seizure .icon-circle { color: var(--seizure); }
-.tint-sleep .icon-circle { color: var(--sleep); }
-.tint-med .icon-circle { color: var(--med); }
 .tint-med .card-label .icon { color: var(--med); }
 .tint-med .dose { border-top-color: color-mix(in srgb, var(--med) 25%, transparent); }
 
@@ -751,7 +865,7 @@ video { background: #000; }
 /* Invite: the code with Share and Copy side by side. */
 .invite-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .sheet .invite-actions .btn { min-height: var(--tap-big); }
-@media (max-width: 399px) { .hide-narrow { display: none; } }
+@media (max-width: 519px) { .hide-narrow { display: none; } }   /* home header: icon-only buttons on phones, so the circle icon and your picture fit */
 
 /* Welcome: Google sign-in and the demo, below the two main ways in. */
 .welcome-more { display: flex; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; }
@@ -776,16 +890,9 @@ video { background: #000; }
 button.setup-row { cursor: pointer; }
 .setup-row > .icon { margin-left: auto; flex: none; color: var(--muted); }
 .setup-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.setup-mark {
-  display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%;
-  background: var(--fill); font-size: 14px; font-weight: 700;
-}
-.setup-mark.done { background: var(--ok); color: var(--bg); }
-.setup-list .is-done strong { color: var(--muted); font-weight: 500; }
 
 /* Goals */
-.goal { display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--goal); }
-.goal.status-paused, .goal.status-met { border-left-color: var(--separator); }
+.goal { display: flex; flex-direction: column; gap: 6px; }
 .goal-title { overflow-wrap: anywhere; }
 .goal p { margin: 0; }
 

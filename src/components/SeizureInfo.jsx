@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { SEIZURE_TYPES } from '../lib/format.js';
+import { useSwipeDismiss } from '../lib/useSwipeDismiss.js';
 import { AFTER_SEIZURE, EMERGENCY, FIRST_AID, SEIZURE_INFO, SOURCE_URL } from '../lib/seizureInfo.js';
 
 // Bottom sheet explaining each seizure type, opened from the ⓘ on the type step.
 export default function SeizureInfo({ onClose }) {
   const title = useRef(null);
+  const sheet = useSwipeDismiss(onClose);
 
   useEffect(() => {
     title.current?.focus();
@@ -17,11 +19,11 @@ export default function SeizureInfo({ onClose }) {
   }, [onClose]);
 
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet info" role="dialog" aria-modal="true" aria-labelledby="seizure-info-title" onClick={(e) => e.stopPropagation()}>
+    <div className="sheet-backdrop" onClick={sheet.dismiss}>
+      <div ref={sheet.ref} {...sheet.handlers} className="sheet info" role="dialog" aria-modal="true" aria-labelledby="seizure-info-title" onClick={(e) => e.stopPropagation()}>
         <div className="spread">
           <h2 id="seizure-info-title" ref={title} tabIndex={-1}>About seizure types</h2>
-          <button className="btn small" onClick={onClose}>Close</button>
+          <button className="btn small" onClick={sheet.dismiss}>Close</button>
         </div>
 
         {SEIZURE_TYPES.map(([key, label]) => (

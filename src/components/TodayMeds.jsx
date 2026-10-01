@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { formatSlot, todaysDoses } from '../lib/meds.js';
 import { formatTime } from '../lib/format.js';
-import { addEntry } from '../data/entries.js';
+import { addEntry, deleteEntry } from '../data/entries.js';
+import { showToast } from '../lib/toast.js';
 import Icon from './Icon.jsx';
 
 // Today's scheduled doses. Once someone logs a dose, everyone sees who gave it, which stops
 // double doses and "did anyone give it?" between caregivers. The next dose's buttons stay on
 // the card, so logging it is still one tap; the full list is one more tap.
+const doseKey = ({ med, slot }) => `${med.name}@${slot}`;
+
 export default function TodayMeds({ circle, me, entries, now = Date.now(), onSetUp }) {
   const [showAll, setShowAll] = useState(false);
 
@@ -28,8 +31,9 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
   const next = rows.find((r) => !r.entry);
   const shown = showAll ? rows : next ? [next] : [];
 
-  function log({ med, slot, at }, status) {
-    addEntry(circle.id, {
+  function log(row, status) {
+    const { med, slot, at } = row;
+    const id = addEntry(circle.id, {
       type: 'med',
       // A missed dose is placed at its scheduled time, so patterns line up with when it was due.
       occurredAt: status === 'missed' ? Math.min(at, Date.now()) : Date.now(),
@@ -40,12 +44,13 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
       createdBy: me.uid,
       createdByName: me.name,
     });
+    showToast(`${med.name} ${formatSlot(slot)} marked ${status}`, () => deleteEntry(circle.id, id));
   }
 
   const missed = rows.filter((r) => r.state === 'missed').length;
   const due = next?.state === 'due';
   const headline = !next
-    ? `✓ All ${rows.length} doses logged today`
+    ? <span className="with-icon"><Icon name="check" size={16} />All {rows.length} doses logged today</span>
     : due
       ? `${formatSlot(next.slot)} ${next.med.name} is due`
       : `${given} of ${rows.length} given · next ${formatSlot(next.slot)}`;
@@ -63,7 +68,7 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
       {shown.map((row) => {
         const { med, slot, entry, state } = row;
         return (
-          <div key={`${med.name}@${slot}`} className={`dose dose-${state}`}>
+          <div key={doseKey(row)} className={`dose dose-${state}`}>
             {/* When only the due dose is shown, the headline already names it. */}
             {(showAll || !due) && (
               <div className="dose-what">
@@ -73,7 +78,8 @@ export default function TodayMeds({ circle, me, entries, now = Date.now(), onSet
             )}
             {entry ? (
               <span className="dose-status">
-                {state === 'given' ? '✓ Given' : 'Missed'} · {entry.createdByName || 'someone'}
+                {state === 'given' && <Icon name="check" size={14} />}
+                {state === 'given' ? 'Given' : 'Missed'} · {entry.createdByName || 'someone'}
                 {state === 'given' && ` · ${formatTime(entry.occurredAt)}`}
               </span>
             ) : (

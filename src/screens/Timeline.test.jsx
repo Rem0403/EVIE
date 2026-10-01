@@ -54,7 +54,9 @@ it('guides a new circle with a checklist instead of empty cards', () => {
   const onInvite = vi.fn();
   render(<Timeline {...props} loading={false} onCarePlan={onCarePlan} onInvite={onInvite} />);
   expect(screen.getByText('Getting started')).toBeTruthy();
-  expect(screen.getByText('0 of 4 done')).toBeTruthy();
+  for (const step of ['Add daily medications', 'Add emergency contacts and the seizure plan', 'Invite family and caregivers', 'Log something']) {
+    expect(screen.getByText(step)).toBeTruthy();
+  }
   // The Seizures and Sleep tiles stay; the medication prompt and handoff card wait while the checklist covers them.
   expect(screen.getByText('None logged')).toBeTruthy(); // the Seizures tile
   expect(screen.getByText('Not logged')).toBeTruthy(); // the Sleep tile
@@ -66,11 +68,13 @@ it('guides a new circle with a checklist instead of empty cards', () => {
   expect(onInvite).toHaveBeenCalled();
 });
 
-it('ticks off what is already set up, and remembers Hide for this circle', () => {
+it('leaves out what is already set up, and remembers Hide for this circle', () => {
   localStorage.clear();
   const circle = { ...props.circle, meds: [{ name: 'Keppra', dose: '', times: ['08:00'] }], memberIds: ['u1', 'u2'] };
   const { unmount } = render(<Timeline {...props} circle={circle} loading={false} />);
-  expect(screen.getByText('2 of 4 done')).toBeTruthy();
+  expect(screen.queryByText('Add daily medications')).toBeNull(); // done: there's a schedule
+  expect(screen.queryByText('Invite family and caregivers')).toBeNull(); // done: two members
+  expect(screen.getByText('Log something')).toBeTruthy();
   expect(screen.getByText('Medications')).toBeTruthy(); // today's doses, since there's a schedule
   fireEvent.click(screen.getByText('Hide this list'));
   expect(screen.queryByText('Getting started')).toBeNull();

@@ -44,7 +44,7 @@ export default function Summary({
   return (
     <section className="stack">
       <div className="spread no-print" style={{ flexWrap: 'wrap' }}>
-        <button className="btn ghost small" onClick={onBack}>← Back</button>
+        <button className="btn ghost small" onClick={onBack}><Icon name="back" size={16} />Back</button>
         <div className="row">
           <button className="btn small" onClick={downloadCsv} disabled={!ready}>CSV</button>
           <button className="btn small" onClick={downloadPdf} disabled={!ready}>Download PDF</button>
@@ -56,9 +56,8 @@ export default function Summary({
       <div>
         <h1>Care summary: {circle.personName}</h1>
         {diagnosisText(circle.profile) && <p>Diagnoses: {diagnosisText(circle.profile)}</p>}
-        <p className="muted">
-          {shortDate(start)} – {shortDate(end)} · generated {shortDate(end)} {formatTime(end)} · from EVIE shared log
-        </p>
+        <p className="muted">{shortDate(start)} – {shortDate(end)}</p>
+        <p className="muted small">Made {shortDate(end)} at {formatTime(end)} from EVIE</p>
       </div>
 
       <div className="no-print">

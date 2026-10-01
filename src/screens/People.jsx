@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { listMembers, ownerOf, removeMember } from '../data/circles.js';
 import { withTimeout } from '../lib/timeout.js';
 import Loader from '../components/Loader.jsx';
+import Avatar from '../components/Avatar.jsx';
+import Icon from '../components/Icon.jsx';
 
 const NETWORK_TIMEOUT_MS = 15000;
 const OFFLINE = "You're offline. Connect to the internet and try again.";
@@ -74,7 +76,7 @@ export default function People({ circle, me, onBack, onInvite, onDeleteCircle })
   const ownerName = members?.find((m) => m.uid === owner)?.name || 'whoever started the circle';
   return (
     <section className="stack">
-      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}>← Back</button>
+      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}><Icon name="back" size={16} />Back</button>
       <div className="spread">
         <h1>People</h1>
         <button className="btn small" onClick={onInvite}>Invite</button>
@@ -86,9 +88,12 @@ export default function People({ circle, me, onBack, onInvite, onDeleteCircle })
         <ul className="people-list">
           {members.map((m) => (
             <li key={m.uid} className="person">
-              <span>
-                <strong>{m.name}</strong>{m.uid === me.uid && ' (you)'}
-                {m.uid === owner && <span className="list-sub">Started the circle</span>}
+              <span className="with-icon">
+                <Avatar name={m.name} photo={m.photo} size={40} />
+                <span>
+                  <strong>{m.name}</strong>{m.uid === me.uid && ' (you)'}
+                  {m.uid === owner && <span className="list-sub">Started the circle</span>}
+                </span>
               </span>
               {isOwner && m.uid !== me.uid && (
                 <button className="btn small danger" disabled={busy !== null} onClick={() => remove(m)}

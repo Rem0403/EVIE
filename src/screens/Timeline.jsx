@@ -6,6 +6,9 @@ import Handoff from '../components/Handoff.jsx';
 import FollowUps from '../components/FollowUps.jsx';
 import GettingStarted from '../components/GettingStarted.jsx';
 import Icon from '../components/Icon.jsx';
+import Avatar from '../components/Avatar.jsx';
+import { CircleIcon } from '../components/CircleIconPicker.jsx';
+import { circleIconOf } from '../lib/circleIcon.js';
 import { dayLabel, formatTime, groupByDay, labelOf, SLEEP_QUALITY } from '../lib/format.js';
 import {
   gettingStarted, hideGettingStarted, isGettingStartedHidden, lastSleep, recentSeizures,
@@ -30,7 +33,7 @@ const whenShort = (ms, now) => `${dayLabel(ms, now)}, ${formatTime(ms)}`;
 // Navigation (Seizure, Log, More…) is the floating AppNav, shown on every screen.
 export default function Timeline({
   circle, me, entries, resources = [], loading = false, historyDays, onShowOlder,
-  onOpen, onCarePlan, onOpenResource, onEmergency, onSchedule, onInvite,
+  onOpen, onCarePlan, onOpenResource, onEmergency, onSchedule, onInvite, photo = '', onProfile, onCircleIcon,
 }) {
   const [filter, setFilter] = useState(null);
   // Re-render each minute so doses turn "Due", and handoffs end, while the app sits open.
@@ -63,10 +66,22 @@ export default function Timeline({
   return (
     <>
       <header className="brand-row">
-        <span className="logo-mark" aria-hidden="true"><Icon name="seizure" size={22} /></span>
-        <span className="wordmark">EVIE</span>
-        <button className="btn small schedule-btn" onClick={onSchedule}><Icon name="calendar" size={18} />Schedule</button>
+        {/* The circle's icon; tapping it changes it. Circles from before icons show the EVIE mark until one is chosen. */}
+        {onCircleIcon ? (
+          <button className="circle-icon-btn" onClick={onCircleIcon}
+            aria-label={circleIconOf(circle) ? 'Change circle icon' : 'Choose a circle icon'}>
+            {circleIconOf(circle)
+              ? <CircleIcon icon={circleIconOf(circle)} size={40} />
+              : <span className="logo-mark"><Icon name="seizure" size={22} /></span>}
+          </button>
+        ) : (
+          <span className="logo-mark" aria-hidden="true"><Icon name="seizure" size={22} /></span>
+        )}
+        <button className="btn small schedule-btn" onClick={onSchedule} aria-label="Schedule"><Icon name="calendar" size={18} /><span className="hide-narrow">Schedule</span></button>
         <button className="btn small" onClick={onInvite} aria-label="Invite family"><Icon name="users" size={18} /><span className="hide-narrow">Invite</span></button>
+        {onProfile && (
+          <button className="avatar-btn" onClick={onProfile} aria-label="Your profile"><Avatar name={me.name} photo={photo} size={40} /></button>
+        )}
       </header>
       <h1 className="page-title">{circle.personName}’s day</h1>
 
@@ -82,14 +97,12 @@ export default function Timeline({
         {!loading && (
           <>
             <button className="tile tint-seizure" onClick={() => showType('seizure')}>
-              <span className="icon-circle ic-seizure" aria-hidden="true"><Icon name="seizure" size={22} /></span>
-              <span className="tile-label">Seizures <span className="tile-sub">· 7 days</span></span>
+              <span className="tile-label">Seizures this week</span>
               <span className="tile-value">{seizures.count}</span>
               <span className="tile-sub">{seizures.last ? `Last: ${whenShort(seizures.last.occurredAt, now)}` : 'None logged'}</span>
             </button>
             <button className="tile tint-sleep" onClick={() => showType('sleep')}>
-              <span className="icon-circle ic-sleep" aria-hidden="true"><Icon name="sleep" size={22} /></span>
-              <span className="tile-label">Sleep <span className="tile-sub">· last night</span></span>
+              <span className="tile-label">Sleep last night</span>
               <span className="tile-value">{sleep ? hoursAndMinutes(sleep.minutes) : '—'}</span>
               <span className="tile-sub">{sleep?.entry.quality ? labelOf(SLEEP_QUALITY, sleep.entry.quality) : 'Not logged'}</span>
             </button>

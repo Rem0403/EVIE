@@ -2,26 +2,29 @@ import { useState } from 'react';
 import BottomBar from './BottomBar.jsx';
 import ColorSelector from './ColorSelector.jsx';
 import Icon from './Icon.jsx';
+import Avatar from './Avatar.jsx';
 import Tabs from './Tabs.jsx';
-import { useFlash } from '../lib/useFlash.js';
+import { showToast } from '../lib/toast.js';
+import { useSwipeDismiss } from '../lib/useSwipeDismiss.js';
 import { loadPalette, loadTheme, PALETTES, savePalette, saveTheme, THEMES } from '../lib/theme.js';
 import { seedDemo } from '../data/demo.js';
 
 // Swatch shown for each palette: a mid tone of its page color, so the circles are easy to tell apart.
 const SWATCH = { lavender: '#c9b8ea', blue: '#a9cbea', green: '#b3cfb8', pink: '#e9bcd6', earth: '#d8c7aa' };
 
+// Each with one short line saying what it's for.
 const QUICK_TYPES = [
-  ['med', 'Medication'],
-  ['sleep', 'Sleep'],
-  ['behavior', 'Behavior'],
-  ['goal', 'Goal practice'],
-  ['note', 'Note'],
+  ['med', 'Medication', 'A dose given, missed or rescue'],
+  ['sleep', 'Sleep', 'Bedtime, waking and how it went'],
+  ['behavior', 'Behavior', 'Meltdowns, shutdowns or a good day'],
+  ['goal', 'Goal', 'Practice on something they’re learning'],
+  ['note', 'Note', 'Anything else, with photos or files'],
 ];
 
 // The floating nav on every screen (except the seizure timer), with its Log menu and More sheet.
 // onGoogle resolves to an error message, or '' when done.
 export default function AppNav({
-  circle, me, resources = [], goals = [], demo, active, email = '',
+  circle, me, resources = [], goals = [], demo, active, email = '', photo = '', onProfile,
   onHome, onSummary, onSeizure, onQuickLog, onCarePlan, onSchedule, onSupport, onGoals, onInvite, onPeople, onPrivacy,
   onGoogle, onSignOut, onExit, onLeave,
 }) {
@@ -29,12 +32,13 @@ export default function AppNav({
   const [more, setMore] = useState(false);
   const [theme, setTheme] = useState(loadTheme);
   const [palette, setPalette] = useState(loadPalette);
-  const [toast, setToast] = useFlash();
   const [seeding, setSeeding] = useState(false);
+  const chooserSheet = useSwipeDismiss(() => setChooser(false));
+  const moreSheet = useSwipeDismiss(() => setMore(false));
 
   async function google() {
     const message = await onGoogle();
-    if (message) setToast(message);
+    if (message) showToast(message);
   }
 
   async function loadDemo() {
@@ -44,11 +48,19 @@ export default function AppNav({
       await seedDemo(circle, me, { hasResources: resources.length > 0, hasGoals: goals.length > 0 });
     } catch (err) {
       console.error(err);
-      setToast("Couldn't load demo data.");
+      showToast("Couldn't load demo data.");
     } finally {
       setSeeding(false);
     }
   }
+
+  // The nav stays tappable over open sheets (so the seizure button is always there), and any
+  // tap on it closes them first.
+  const fromNav = (action) => () => {
+    setChooser(false);
+    setMore(false);
+    action();
+  };
 
   const fromMore = (action) => () => {
     setMore(false);
@@ -67,15 +79,23 @@ export default function AppNav({
 
   return (
     <>
-      {toast && <p className="nav-toast no-print" role="status">{toast}</p>}
-      <BottomBar active={active} onHome={onHome} onSeizure={onSeizure} onLog={() => setChooser(true)} onSummary={onSummary} onMore={() => setMore(true)} />
+      <BottomBar
+        active={active}
+        onHome={fromNav(onHome)}
+        onSeizure={fromNav(onSeizure)}
+        onLog={fromNav(() => setChooser(true))}
+        onSummary={fromNav(onSummary)}
+        onMore={fromNav(() => setMore(true))}
+      />
 
       {chooser && (
-        <div className="sheet-backdrop" onClick={() => setChooser(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-label="Log" onClick={(e) => e.stopPropagation()}>
-            {QUICK_TYPES.map(([type, label]) => (
-              <button key={type} className={`btn type-${type}`} onClick={() => { setChooser(false); onQuickLog(type); }}>
-                <Icon name={type} size={22} /> {label}
+        <div className="sheet-backdrop" onClick={chooserSheet.dismiss}>
+          <div ref={chooserSheet.ref} {...chooserSheet.handlers} className="sheet" role="dialog" aria-modal="true" aria-label="Log" onClick={(e) => e.stopPropagation()}>
+            {QUICK_TYPES.map(([type, label, about]) => (
+              <button key={type} className={`btn log-type type-${type}`} onClick={() => { setChooser(false); onQuickLog(type); }}>
+                <Icon name={type} size={22} />
+                <span className="log-type-name">{label}</span>
+                <span className="log-type-about">{about}</span>
               </button>
             ))}
           </div>
@@ -83,9 +103,20 @@ export default function AppNav({
       )}
 
       {more && (
-        <div className="sheet-backdrop" onClick={() => setMore(false)}>
-          <div className="sheet panel grouped" role="dialog" aria-modal="true" aria-label="More" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-backdrop" onClick={moreSheet.dismiss}>
+          <div ref={moreSheet.ref} {...moreSheet.handlers} className="sheet panel grouped" role="dialog" aria-modal="true" aria-label="More" onClick={(e) => e.stopPropagation()}>
             <h2>More</h2>
+            {onProfile && (
+              <div className="group">
+                <button className="list-row profile-row" onClick={fromMore(onProfile)}>
+                  <span className="with-icon">
+                    <Avatar name={me.name} photo={photo} size={44} />
+                    <span>{me.name}<span className="list-sub">{photo ? 'Change your photo' : 'Add a photo'}</span></span>
+                  </span>
+                  <Icon name="chevron" size={18} />
+                </button>
+              </div>
+            )}
             <div className="group">
               <button className="list-row" onClick={fromMore(onCarePlan)}>Care plan<Icon name="chevron" size={18} /></button>
               <button className="list-row" onClick={fromMore(onGoals)}>Goals<Icon name="chevron" size={18} /></button>
@@ -132,7 +163,7 @@ export default function AppNav({
               </button>
               <button className="list-row danger" onClick={fromMore(onLeave)}>Leave this circle</button>
             </div>
-            <button className="btn" onClick={() => setMore(false)}>Close</button>
+            <button className="btn" onClick={moreSheet.dismiss}>Close</button>
           </div>
         </div>
       )}

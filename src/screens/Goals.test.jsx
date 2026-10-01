@@ -22,7 +22,7 @@ it('explains goals and offers to add one when there are none', () => {
   const h = handlers();
   render(<Goals circle={circle} goals={[]} entries={[]} {...h} />);
   expect(screen.getByText(/No goals yet/)).toBeTruthy();
-  fireEvent.click(screen.getByText('Add a goal'));
+  fireEvent.click(screen.getByRole('button', { name: 'Add goal' }));
   expect(h.onAdd).toHaveBeenCalled();
 });
 
@@ -82,4 +82,14 @@ it('needs a goal title, and confirms before removing', () => {
   render(<GoalForm circle={circle} me={me} goal={{ id: 'g1', title: 'Old', status: 'active' }} onDone={vi.fn()} />);
   fireEvent.click(screen.getByText('Remove goal'));
   expect(deleteGoal).toHaveBeenCalledWith('c1', 'g1');
+});
+
+it('says when a goal was last practiced, keeping a date readable', () => {
+  const h = handlers();
+  const now = Date.now();
+  const goal = { id: 'g1', title: 'Ask for help', area: 'communication', status: 'active', createdAt: now - 30 * 86400000 };
+  const old = { id: 'e1', type: 'goal', goalId: 'g1', result: 'own', occurredAt: now - 20 * 86400000 };
+  render(<Goals circle={circle} goals={[goal]} entries={[old]} {...h} />);
+  expect(screen.getByText('No practice logged in the last 2 weeks.')).toBeTruthy();
+  expect(screen.getByText(/^Last practiced on [A-Z][a-z]{2}, [A-Z][a-z]{2} \d+$/)).toBeTruthy();
 });

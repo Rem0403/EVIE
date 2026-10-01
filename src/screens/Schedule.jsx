@@ -3,6 +3,7 @@ import ChipGroup from '../components/ChipGroup.jsx';
 import { formatSlot } from '../lib/meds.js';
 import { cleanSchedule, EVV_NOTE, WEEKDAYS, weekRows } from '../lib/schedule.js';
 import { updateCircle } from '../data/circles.js';
+import Icon from '../components/Icon.jsx';
 
 const blankShift = () => ({ name: '', days: [], start: '08:00', end: '15:00', note: '' });
 const span = (s) => `${formatSlot(s.start)}–${formatSlot(s.end)}${s.end <= s.start ? ' (next day)' : ''}`;
@@ -35,7 +36,7 @@ export default function Schedule({ circle, onBack }) {
 
   return (
     <section className="stack">
-      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}>← Back</button>
+      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}><Icon name="back" size={16} />Back</button>
       <h1>Caregiver schedule</h1>
       <p className="callout small" role="note">{EVV_NOTE}</p>
 

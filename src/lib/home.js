@@ -34,7 +34,7 @@ export function gettingStarted(circle, entries) {
     {
       id: 'log', done: entries.length > 0, action: null,
       title: 'Log something',
-      text: 'Tap the purple button below to time a seizure, or + to log a medication, sleep, behavior, goal practice or note.',
+      text: 'Your first seizure, dose, night’s sleep or note.',
     },
   ];
 }

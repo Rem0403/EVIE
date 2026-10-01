@@ -19,9 +19,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it('opens on the E.V.I.E. name, what it stands for, and the two ways in', () => {
+it('opens on the EVIE name, what it stands for, and the two ways in', () => {
   render(<Welcome uid="u1" onJoined={vi.fn()} />);
-  expect(screen.getByRole('heading', { level: 1, name: 'E.V.I.E.' })).toBeTruthy();
+  expect(screen.getByRole('heading', { level: 1, name: 'EVIE' })).toBeTruthy();
   expect(document.querySelector('.welcome-sub').textContent).toBe('Event Video & Information Exchange');
   expect(screen.getByRole('button', { name: 'Start a care circle' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Join with a code' })).toBeTruthy();
@@ -33,7 +33,9 @@ it('starts a circle with guided setup, and shows the invite code once it is made
   const onJoined = vi.fn();
   render(<Welcome uid="u1" onJoined={onJoined} />);
   fireEvent.click(screen.getByText('Start a care circle'));
-  expect(screen.getByText('Step 1 of 3')).toBeTruthy();
+  expect(screen.getByText('Step 1 of 4')).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Choose an icon for the circle' })).toBeTruthy();
+  fireEvent.click(screen.getByText('Next'));
   fireEvent.change(screen.getByPlaceholderText('e.g. Remy'), { target: { value: 'Remy' } });
   fireEvent.change(screen.getByPlaceholderText('Their first name'), { target: { value: 'Maya' } });
   fireEvent.click(screen.getByText('Next'));
@@ -91,7 +93,10 @@ it('shows why Google sign-in failed, and who is signed in once it worked', async
   fireEvent.click(screen.getByText('Continue with Google'));
   expect(await screen.findByText('Allow pop-ups for EVIE, then try again.')).toBeTruthy();
   cleanup();
-  render(<Welcome uid="u1" onJoined={vi.fn()} email="remy@example.com" />);
+  const onSignOut = vi.fn();
+  render(<Welcome uid="u1" onJoined={vi.fn()} email="remy@example.com" onSignOut={onSignOut} />);
   expect(screen.getByText(/Signed in with Google as remy@example.com/)).toBeTruthy();
   expect(screen.queryByText('Continue with Google')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  expect(onSignOut).toHaveBeenCalled();
 });

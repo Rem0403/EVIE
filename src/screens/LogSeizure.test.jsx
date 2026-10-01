@@ -24,8 +24,8 @@ afterEach(() => {
 it('lets the user pick an existing video instead of forcing the camera', () => {
   render(<LogSeizure {...props()} />);
   fireEvent.click(screen.getByText('Stop'));
-  fireEvent.click(screen.getByText('Skip →'));
-  fireEvent.click(screen.getByText('Skip →'));
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
   fireEvent.click(screen.getByText('Next'));
   const input = document.querySelector('input[type=file]');
   expect(input.hasAttribute('capture')).toBe(false);
@@ -106,7 +106,7 @@ it('keeps the earlier answer when going back', () => {
   render(<LogSeizure {...props()} />);
   fireEvent.click(screen.getByText('Stop'));
   fireEvent.click(screen.getByRole('button', { name: /^Absence/ }));
-  fireEvent.click(screen.getByText('← Back'));
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }));
   expect(screen.getByRole('button', { name: /^Absence/ }).getAttribute('aria-pressed')).toBe('true');
 });
 
@@ -125,8 +125,8 @@ it('shows each type with a short summary and a full guide behind the info button
 it('records a seizure that happened during sleep', () => {
   render(<LogSeizure {...props()} />);
   fireEvent.click(screen.getByText('Stop'));
-  fireEvent.click(screen.getByText('Skip →'));
-  fireEvent.click(screen.getByText('Skip →'));
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
   fireEvent.click(screen.getByText('Next'));
   fireEvent.click(screen.getByRole('button', { name: /asleep/ }));
   fireEvent.click(screen.getByText('Save seizure'));

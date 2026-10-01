@@ -31,13 +31,13 @@ service cloud.firestore {
       // Whoever started the circle can delete it, after clearing everything in it (see deleteCircle).
       allow delete: if signedIn() && request.auth.uid == resource.data.memberIds[0];
       allow create: if signedIn() && request.resource.data.memberIds == [request.auth.uid]
-        && request.resource.data.keys().hasOnly(['name', 'personName', 'joinCode', 'memberIds', 'createdAt', 'profile', 'meds'])
+        && request.resource.data.keys().hasOnly(['name', 'personName', 'joinCode', 'memberIds', 'createdAt', 'profile', 'meds', 'icon', 'iconColor', 'iconPhoto'])
         && validCircle(request.resource.data);
       allow update: if signedIn() && (
         // Members may edit the care plan and schedule, rename or replace the code, but not change who is in the circle.
         (
           request.auth.uid in resource.data.memberIds
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile', 'schedule', 'documents'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'personName', 'joinCode', 'meds', 'profile', 'schedule', 'documents', 'icon', 'iconColor', 'iconPhoto'])
           && validCircle(request.resource.data)
         )
         || (
@@ -70,18 +70,34 @@ service cloud.firestore {
       function validCircle(d) {
         return text(d, 'name', 200) && text(d, 'personName', 60) && text(d, 'joinCode', 40)
           && list(d, 'meds', 100) && list(d, 'schedule', 300) && list(d, 'documents', 300)
-          && (!('profile' in d) || d.profile is map);
+          && (!('profile' in d) || d.profile is map)
+          // The circle's icon: one of the symbols and colors in src/lib/circleIcon.js.
+          && (!('icon' in d) || d.icon in ['heart', 'sun', 'moon', 'star', 'rainbow', 'cloud', 'umbrella', 'leaf', 'seedling', 'tree', 'mountain', 'wave', 'dove', 'fish', 'cat', 'dog', 'horse', 'frog', 'paw', 'music', 'art', 'ball', 'rocket', 'home'])
+          // Or a photo: only a small JPEG made by the app (as for profile pictures), or '' for none.
+          && (!('iconPhoto' in d) || d.iconPhoto == ''
+            || (d.iconPhoto is string && d.iconPhoto.size() <= 60000 && d.iconPhoto.matches('data:image/jpeg;base64,[A-Za-z0-9+/]+=*')))
+          && (!('iconColor' in d) || d.iconColor in ['lavender', 'blue', 'green', 'pink', 'earth', 'gold']);
       }
       function removedIds() {
         return resource.data.memberIds.removeAll(request.resource.data.memberIds);
       }
 
+      // A profile picture is a small JPEG data URL made by the app, the Google account picture,
+      // or '' once removed. Nothing else, so a photo can never be a script or a tracking link.
+      // Same limits as src/lib/avatar.js.
+      function validPhoto(d) {
+        return !('photo' in d) || d.photo == ''
+          || (d.photo is string && d.photo.size() <= 60000
+            && (d.photo.matches('data:image/jpeg;base64,[A-Za-z0-9+/]+=*')
+              || d.photo.matches('https://lh[0-9]+[.]googleusercontent[.]com/[^\\s"<>]+')));
+      }
       match /members/{uid} {
         allow read: if isMember(circleId);
         allow create, update: if uid == request.auth.uid && isMemberAfter(circleId)
-          && request.resource.data.keys().hasOnly(['displayName', 'joinCode', 'joinedAt'])
+          && request.resource.data.keys().hasOnly(['displayName', 'joinCode', 'joinedAt', 'photo'])
           && request.resource.data.displayName is string && request.resource.data.displayName.size() > 0
-          && request.resource.data.displayName.size() <= 60;
+          && request.resource.data.displayName.size() <= 60
+          && validPhoto(request.resource.data);
         // Your own record when you leave, or anyone's when whoever started the circle removes them.
         allow delete: if isMember(circleId)
           && (uid == request.auth.uid || request.auth.uid == get(circlePath(circleId)).data.memberIds[0]);

@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  clearLocalFirestore, connectGoogle, ensureSignedIn, flushWrites, googleEmail, signOutGoogle,
+  clearLocalFirestore, connectGoogle, ensureSignedIn, flushWrites, googleEmail, googlePhoto, signOutGoogle,
 } from './firebase.js';
 import {
   clearEvieStorage, deleteMediaDatabase, setNextNotice, takeNotice,
 } from './lib/wipe.js';
 import {
-  deleteCircle, findMyCircle, getCircle, leaveCircleForGood, ownerOf, subscribeCircle, upgradeJoinCode,
+  deleteCircle, findMyCircle, getCircle, leaveCircleForGood, ownerOf, setMyPhoto, subscribeCircle, subscribeMember, upgradeJoinCode,
 } from './data/circles.js';
 import { withTimeout } from './lib/timeout.js';
 import { HISTORY_STEPS } from './lib/summary.js';
@@ -19,8 +19,14 @@ import { loadSeizureDraft } from './lib/seizureDraft.js';
 import OfflineBanner from './components/OfflineBanner.jsx';
 import AppNav from './components/AppNav.jsx';
 import InviteSheet from './components/InviteCode.jsx';
+import ProfileSheet from './components/ProfileSheet.jsx';
+import CircleIconSheet from './components/CircleIconSheet.jsx';
+import { isAllowedPhoto } from './lib/avatar.js';
+import { showToast } from './lib/toast.js';
 import Loader from './components/Loader.jsx';
+import Toast from './components/Toast.jsx';
 import { scrollToTop } from './lib/scroll.js';
+import { ownsSideways, swipeDirection } from './lib/swipe.js';
 import Welcome from './screens/Welcome.jsx';
 import Timeline from './screens/Timeline.jsx';
 import LogSeizure from './screens/LogSeizure.jsx';
@@ -60,6 +66,10 @@ export default function App() {
   const [status, setStatus] = useState('loading'); // loading | error | ready
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState(''); // set once the account is linked to Google
+  const [googlePic, setGooglePic] = useState(''); // the Google account picture, once linked
+  const [member, setMember] = useState(null); // your record in the circle: name and photo
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [iconOpen, setIconOpen] = useState(false);
   const [circle, setCircle] = useState(null);
   const [name, setName] = useState('');
   const [demo, setDemo] = useState(false); // a "Try a demo" circle full of sample data
@@ -77,6 +87,14 @@ export default function App() {
   const [goals, setGoals] = useState([]);
   // Reopen an unsaved seizure after a reload so its timing isn't lost.
   const [screen, setScreen] = useState(() => (loadSeizureDraft() ? { name: 'seizure' } : { name: 'timeline' }));
+  const swipeStart = useRef(null);
+
+  // Sheets belong to the screen they were opened on, e.g. the seizure button leaves them behind.
+  useEffect(() => {
+    setInviting(false);
+    setProfileOpen(false);
+    setIconOpen(false);
+  }, [screen]);
 
   async function boot() {
     setStatus('loading');
@@ -84,6 +102,7 @@ export default function App() {
       const u = await ensureSignedIn();
       setUser(u);
       setEmail(googleEmail(u));
+      setGooglePic(googlePhoto(u));
       const session = loadSession();
       if (session) {
         const c = await getCircle(session.circleId);
@@ -123,6 +142,18 @@ export default function App() {
       }
     });
   }, [circle?.id]);
+
+  useEffect(() => {
+    if (!circle || !user) return undefined;
+    return subscribeMember(circle.id, user.uid, setMember, (err) => console.error('member subscription', err));
+  }, [circle?.id, user?.uid]);
+
+  // Once you're signed in with Google, your Google picture becomes your photo, unless you already
+  // have one or removed it ('' is kept on purpose so it isn't put back).
+  useEffect(() => {
+    if (!circle || !member || 'photo' in member || !isAllowedPhoto(googlePic) || !googlePic) return;
+    setMyPhoto(circle.id, user.uid, googlePic).catch((err) => console.error('google photo', err));
+  }, [circle?.id, member, googlePic]);
 
   useEffect(() => {
     if (!circle) return undefined;
@@ -170,6 +201,7 @@ export default function App() {
   function closeCircle() {
     clearSession();
     setCircle(null);
+    setMember(null);
     setDemo(false);
     setEntries([]);
     setEntriesLoaded(false);
@@ -262,6 +294,7 @@ export default function App() {
       ));
       if (!u) return '';
       setEmail(googleEmail(u));
+      setGooglePic(googlePhoto(u));
       if (u.uid === user.uid) return '';
       closeCircle();
       setUser(u);
@@ -280,7 +313,8 @@ export default function App() {
       window.alert('Connect to the internet to sign out.');
       return;
     }
-    if (!window.confirm(`Sign out of Google on this phone? Sign in again to get back to your circle. ${PHONE_ONLY}`)) return;
+    const back = circle ? ' Sign in again to get back to your circle.' : '';
+    if (!window.confirm(`Sign out of Google on this phone?${back} ${PHONE_ONLY}`)) return;
     await flushWrites(SYNC_TIMEOUT_MS);
     try {
       await signOutGoogle();
@@ -289,7 +323,7 @@ export default function App() {
       window.alert("Couldn't sign out. Try again.");
       return;
     }
-    await clearPhoneAndReload("You signed out of Google, and this phone's copy of the circle was cleared.");
+    await clearPhoneAndReload(circle ? "You signed out of Google, and this phone's copy of the circle was cleared." : 'You signed out of Google.');
   }
 
   // Browsers only let a page close itself in some installed apps, so this syncs first and then
@@ -327,8 +361,14 @@ export default function App() {
   }
 
   const me = { uid: user.uid, name };
+  const myPhoto = member?.photo || '';
+  // Saves at once; offline it's queued like entries, and the live record shows it straight away.
+  const changePhoto = (photo) => setMyPhoto(circle.id, user.uid, photo).catch((err) => {
+    console.error('photo', err);
+    showToast("Couldn't save your photo. Try again.");
+  });
   const go = (next) => setScreen(next);
-  // With no goal to log against yet, Goal practice opens the goals list, which explains them.
+  // With no goal to log against yet, Goal opens the goals list, which explains them.
   const quickLog = (type) => go(type === 'goal' && !goals.some((g) => g.status === 'active') ? { name: 'goals' } : { name: 'quick', type });
   const home = () => setScreen({ name: 'timeline' });
 
@@ -338,7 +378,8 @@ export default function App() {
       ? <Privacy onBack={home} />
       : (
         <Welcome
-          uid={user.uid} onJoined={handleJoined} inviteCode={inviteCode} email={email} onGoogle={signInWithGoogle}
+          uid={user.uid} onJoined={handleJoined} inviteCode={inviteCode} email={email} googlePhoto={googlePic}
+          onGoogle={signInWithGoogle} onSignOut={signOutOfGoogle}
           notice={notice} onPrivacy={() => go({ name: 'privacy' })} onClearPhone={clearThisPhone}
         />
       );
@@ -448,6 +489,9 @@ export default function App() {
             onSchedule={() => go({ name: 'schedule' })}
             onInvite={() => setInviting(true)}
             onOpenResource={(id) => go({ name: 'resource', id })}
+            photo={myPhoto}
+            onProfile={() => setProfileOpen(true)}
+            onCircleIcon={() => setIconOpen(true)}
           />
         );
     }
@@ -457,10 +501,27 @@ export default function App() {
   const showNav = circle && screen.name !== 'seizure';
   // Any screen name the switch above doesn't handle falls through to the timeline (home).
   const atHome = !['seizure', 'quick', 'detail', 'support', 'resource', 'goals', 'goal', 'people', 'privacy', 'schedule', 'emergency', 'careplan', 'summary'].includes(screen.name);
+  // Swiping sideways moves between Home and the Care summary, like the two tabs they are in the nav.
+  const swipeable = circle && (atHome || screen.name === 'summary');
+  function onTouchStart(e) {
+    const t = e.touches[0];
+    swipeStart.current = swipeable && e.touches.length === 1 && !ownsSideways(e.target) ? { x: t.clientX, y: t.clientY } : null;
+  }
+  function onTouchEnd(e) {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dir = swipeDirection(t.clientX - start.x, t.clientY - start.y);
+    if (dir === 'left' && atHome) go({ name: 'summary' });
+    if (dir === 'right' && screen.name === 'summary') home();
+  }
+
   return (
     <>
       <OfflineBanner />
-      <main className={`app${atHome && circle ? ' app-home' : ''}${showNav ? ' app-nav' : ''}`}>
+      <main className={`app${atHome && circle ? ' app-home' : ''}${showNav ? ' app-nav' : ''}`}
+        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {demo && circle && atHome && (
           <p className="demo-banner no-print">
             Demo circle with made-up data.
@@ -469,7 +530,13 @@ export default function App() {
         )}
         {body}
       </main>
+      <Toast />
       {inviting && circle && <InviteSheet circle={circle} onClose={() => setInviting(false)} />}
+      {iconOpen && circle && <CircleIconSheet circle={circle} onClose={() => setIconOpen(false)} />}
+      {profileOpen && circle && (
+        <ProfileSheet circle={circle} me={me} photo={myPhoto} googlePhoto={googlePic} email={email}
+          onChangePhoto={changePhoto} onGoogle={signInWithGoogle} onSignOut={signOutOfGoogle} onClose={() => setProfileOpen(false)} />
+      )}
       {showNav && (
         <AppNav
           circle={circle}
@@ -478,6 +545,8 @@ export default function App() {
           goals={goals}
           demo={DEMO}
           email={email}
+          photo={myPhoto}
+          onProfile={() => setProfileOpen(true)}
           active={screen.name === 'summary' ? 'summary' : atHome ? 'home' : null}
           onHome={() => { setScreen({ name: 'timeline' }); scrollToTop(); }}
           onSummary={() => go({ name: 'summary' })}

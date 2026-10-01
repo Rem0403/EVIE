@@ -10,6 +10,7 @@ import Icon from '../components/Icon.jsx';
 import SeizureInfo from '../components/SeizureInfo.jsx';
 import EmergencyInfo from '../components/EmergencyInfo.jsx';
 import { SEIZURE_INFO } from '../lib/seizureInfo.js';
+import { useSwipeDismiss } from '../lib/useSwipeDismiss.js';
 
 const STEPS = 4;
 
@@ -25,6 +26,7 @@ export default function LogSeizure({ circle, me, onDone }) {
   const [step, setStep] = useState(draft?.step ?? 1);
   const [showInfo, setShowInfo] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+  const emergencySheet = useSwipeDismiss(() => setShowEmergency(false));
   const stepHeading = useRef(null);
   const [seizureType, setSeizureType] = useState(draft?.seizureType ?? null);
   const [rescue, setRescue] = useState(draft?.rescue ?? null);
@@ -131,29 +133,35 @@ export default function LogSeizure({ circle, me, onDone }) {
 
   if (!stopMs) {
     return (
-      <section className="stack">
-        <p className="hint">Seizure in progress. Stay with them, and note what you see.</p>
-        <div className={`timer${overLimit ? ' over' : ''}`} aria-live="off">{formatClock(elapsed)}</div>
-        {overLimit && (
-          <p className="alert-msg" role="alert">
-            5 minutes. Follow their seizure plan. If you don’t have one, call emergency services now.
-          </p>
-        )}
-        <button className="btn stop-btn" onClick={() => setStopMs(Date.now())}>Stop</button>
-        <p className="hint small">Started earlier?</p>
-        <div className="row" style={{ justifyContent: 'center' }}>
-          <button className="btn small" onClick={() => adjust(15)}>+15s</button>
-          <button className="btn small" onClick={() => adjust(30)}>+30s</button>
-          <button className="btn small" onClick={() => adjust(60)}>+1m</button>
+      // Laid out like the iPhone Stopwatch: Cancel up top, away from Stop; the time in the middle;
+      // Stop and Emergency info at the bottom, where a thumb already is.
+      <section className="seizure-run">
+        <button className="btn ghost small run-cancel" onClick={cancel}>Cancel</button>
+        <div className="run-clock">
+          <p className="run-status">Seizure in progress</p>
+          <div className={`timer${overLimit ? ' over' : ''}`} aria-live="off">{formatClock(elapsed)}</div>
+          {overLimit
+            ? (
+              <p className="alert-msg" role="alert">
+                5 minutes. Follow their seizure plan. If you don’t have one, call emergency services now.
+              </p>
+            )
+            : <p className="hint">Stay with them and note what you see.</p>}
+          <div className="run-adjust">
+            <span className="hint small">Started earlier?</span>
+            <button className="btn small" onClick={() => adjust(15)}>+15s</button>
+            <button className="btn small" onClick={() => adjust(30)}>+30s</button>
+            <button className="btn small" onClick={() => adjust(60)}>+1m</button>
+          </div>
         </div>
-        <button className="btn" onClick={() => setShowEmergency(true)}>Emergency info</button>
-        <button className="btn ghost" onClick={cancel}>Cancel</button>
+        <button className="btn stop-btn" onClick={() => setStopMs(Date.now())}>Stop</button>
+        <button className="btn" onClick={() => setShowEmergency(true)}><Icon name="phone" size={18} />Emergency info</button>
         {showEmergency && (
-          <div className="sheet-backdrop" onClick={() => setShowEmergency(false)}>
-            <div className="sheet panel" role="dialog" aria-modal="true" aria-label="Emergency info" onClick={(e) => e.stopPropagation()}>
+          <div className="sheet-backdrop" onClick={emergencySheet.dismiss}>
+            <div ref={emergencySheet.ref} {...emergencySheet.handlers} className="sheet panel" role="dialog" aria-modal="true" aria-label="Emergency info" onClick={(e) => e.stopPropagation()}>
               <div className="spread">
                 <h2>Emergency info</h2>
-                <button className="btn small" onClick={() => setShowEmergency(false)}>Close</button>
+                <button className="btn small" onClick={emergencySheet.dismiss}>Close</button>
               </div>
               <p className="muted small">The timer keeps running.</p>
               <EmergencyInfo circle={circle} />
@@ -196,7 +204,7 @@ export default function LogSeizure({ circle, me, onDone }) {
     <section className="stack">
       <div className="spread">
         {step > 1
-          ? <button className="btn ghost small" onClick={() => setStep(step - 1)}>← Back</button>
+          ? <button className="btn ghost small" onClick={() => setStep(step - 1)}><Icon name="back" size={16} />Back</button>
           : <button className="btn small" onClick={() => setStopMs(null)}>Resume</button>}
         <span className="muted">Seizure · {formatDuration(elapsed)}</span>
       </div>
@@ -274,7 +282,7 @@ export default function LogSeizure({ circle, me, onDone }) {
         )}
       </div>
 
-      {step < 3 && <button className="btn ghost small skip" onClick={next}>Skip →</button>}
+      {step < 3 && <button className="btn ghost small skip" onClick={next}>Skip<Icon name="chevron" size={14} /></button>}
       <button className="btn primary big" onClick={save}>Save seizure</button>
       <button className="btn ghost small" onClick={cancel}>Discard this seizure</button>
 

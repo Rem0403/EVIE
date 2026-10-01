@@ -13,7 +13,13 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+// Setup opens on the circle icon step; Next keeps the default icon.
+function toNames() {
+  if (screen.queryByRole('heading', { name: 'Choose an icon for the circle' })) fireEvent.click(screen.getByText('Next'));
+}
+
 function throughNames() {
+  toNames();
   fireEvent.change(screen.getByPlaceholderText('e.g. Remy'), { target: { value: ' Remy ' } });
   fireEvent.change(screen.getByPlaceholderText('Their first name'), { target: { value: 'Maya' } });
   fireEvent.click(screen.getByText('Next'));
@@ -44,6 +50,8 @@ it('saves the care team and medications with the new circle, in one go', async (
     personName: 'Maya',
     profile: { contacts: [{ name: 'Ms. Lee', role: 'caregiver', phone: '985-555-0142' }] },
     meds: [{ name: 'Keppra', dose: '500 mg', times: ['08:00'], purpose: '', notes: '' }],
+    icon: 'heart',
+    iconColor: 'lavender',
   });
 });
 
@@ -91,4 +99,59 @@ it('keeps what was typed when going back a step', () => {
   throughNames();
   fireEvent.click(screen.getByText('Back'));
   expect(screen.getByPlaceholderText('Their first name').value).toBe('Maya');
+});
+
+const GOOGLE = 'https://lh3.googleusercontent.com/a/me=s96-c';
+
+it('offers your Google picture as your photo and saves it with the circle', async () => {
+  createCircle.mockResolvedValue({ id: 'c1' });
+  render(<Setup uid="u1" googlePhoto={GOOGLE} onCreated={vi.fn()} onCancel={vi.fn()} />);
+  throughNames();
+  fireEvent.click(screen.getByText('Skip for now'));
+  fireEvent.click(screen.getByText('Skip and create circle'));
+  await waitFor(() => expect(createCircle).toHaveBeenCalled());
+  expect(createCircle.mock.calls[0][0].photo).toBe(GOOGLE);
+});
+
+it('remembers a removed Google picture, so it is not added back later', async () => {
+  createCircle.mockResolvedValue({ id: 'c1' });
+  render(<Setup uid="u1" googlePhoto={GOOGLE} onCreated={vi.fn()} onCancel={vi.fn()} />);
+  toNames();
+  fireEvent.click(screen.getByText('Remove photo'));
+  throughNames();
+  fireEvent.click(screen.getByText('Skip for now'));
+  fireEvent.click(screen.getByText('Skip and create circle'));
+  await waitFor(() => expect(createCircle).toHaveBeenCalled());
+  expect(createCircle.mock.calls[0][0].photo).toBe('');
+});
+
+it('saves no photo field when none was offered or chosen', async () => {
+  createCircle.mockResolvedValue({ id: 'c1' });
+  render(<Setup uid="u1" onCreated={vi.fn()} onCancel={vi.fn()} />);
+  throughNames();
+  fireEvent.click(screen.getByText('Skip for now'));
+  fireEvent.click(screen.getByText('Skip and create circle'));
+  await waitFor(() => expect(createCircle).toHaveBeenCalled());
+  expect(createCircle.mock.calls[0][0].photo).toBeUndefined();
+});
+
+it('starts with the circle icon, and saves the one chosen', async () => {
+  createCircle.mockResolvedValue({ id: 'c1' });
+  render(<Setup uid="u1" onCreated={vi.fn()} onCancel={vi.fn()} />);
+  expect(screen.getByText('Step 1 of 4')).toBeTruthy();
+  fireEvent.click(screen.getByRole('radio', { name: 'Seedling' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Sage' }));
+  throughNames();
+  fireEvent.click(screen.getByText('Skip for now'));
+  fireEvent.click(screen.getByText('Skip and create circle'));
+  await waitFor(() => expect(createCircle).toHaveBeenCalled());
+  expect(createCircle.mock.calls[0][0]).toMatchObject({ icon: 'seedling', iconColor: 'green' });
+});
+
+it('keeps the chosen icon when going back to it', () => {
+  render(<Setup uid="u1" onCreated={vi.fn()} onCancel={vi.fn()} />);
+  fireEvent.click(screen.getByRole('radio', { name: 'Dove' }));
+  toNames();
+  fireEvent.click(screen.getByText('Back'));
+  expect(screen.getByRole('radio', { name: 'Dove' }).checked).toBe(true);
 });

@@ -1,9 +1,10 @@
+import Icon from '../components/Icon.jsx';
 // What EVIE keeps, where, who sees it, and how to remove it. Every statement here describes the
 // code as it is (see docs/DECISIONS.md); change this page in the same change as the behavior.
 export default function Privacy({ onBack }) {
   return (
     <section className="stack privacy">
-      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}>← Back</button>
+      <button className="btn ghost small" onClick={onBack} style={{ alignSelf: 'flex-start' }}><Icon name="back" size={16} />Back</button>
       <h1>Privacy</h1>
       <p className="muted">EVIE holds health information about someone who may not be able to speak for themselves. This is how it’s handled.</p>
 

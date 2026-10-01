@@ -4,6 +4,7 @@ import { dayLabel, formatTime, startOfDay } from '../lib/format.js';
 import { addEntry } from '../data/entries.js';
 import { nextToday, onNow } from '../lib/schedule.js';
 import Icon from './Icon.jsx';
+import { useSwipeDismiss } from '../lib/useSwipeDismiss.js';
 
 // "3:00 PM" today, "Yesterday 6:00 PM" otherwise.
 const when = (ms, now) => (startOfDay(ms) === startOfDay(now) ? formatTime(ms) : `${dayLabel(ms, now)} ${formatTime(ms)}`);
@@ -59,6 +60,7 @@ export default function Handoff({ circle, me, entries, now = Date.now() }) {
 }
 
 function TakeOverSheet({ circle, me, entries, current, onClose }) {
+  const sheet = useSwipeDismiss(onClose);
   const [now] = useState(() => Date.now());
   const [until, setUntil] = useState('');
   const [note, setNote] = useState('');
@@ -89,8 +91,8 @@ function TakeOverSheet({ circle, me, entries, current, onClose }) {
   }
 
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <form className="sheet panel" role="dialog" aria-modal="true" aria-labelledby="handoff-title"
+    <div className="sheet-backdrop" onClick={sheet.dismiss}>
+      <form ref={sheet.ref} {...sheet.handlers} className="sheet panel" role="dialog" aria-modal="true" aria-labelledby="handoff-title"
         onClick={(e) => e.stopPropagation()} onSubmit={save}>
         <h2 id="handoff-title" ref={title} tabIndex={-1}>
           {from ? `Take over from ${from}` : `You’re with ${circle.personName}`}
@@ -109,7 +111,7 @@ function TakeOverSheet({ circle, me, entries, current, onClose }) {
             placeholder="e.g. slept badly, gave the 8 AM dose, a bit off today" />
         </label>
         <button className="btn primary big">{from ? 'Take over' : 'Save'}</button>
-        <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn ghost" onClick={sheet.dismiss}>Cancel</button>
       </form>
     </div>
   );

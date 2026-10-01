@@ -45,6 +45,7 @@ export async function ensureSignedIn() {
 const google = new GoogleAuthProvider();
 
 export const googleEmail = (user) => user?.providerData.find((p) => p.providerId === 'google.com')?.email || '';
+export const googlePhoto = (user) => user?.providerData.find((p) => p.providerId === 'google.com')?.photoURL || '';
 
 // Adds Google to this phone's anonymous account. The uid stays the same, so circles, entries
 // and the rules see the same person. If that Google account already has an EVIE identity

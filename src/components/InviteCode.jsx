@@ -3,6 +3,7 @@ import { newJoinCode } from '../data/circles.js';
 import { shareJoinCode, shareMessage } from '../lib/share.js';
 import { withTimeout } from '../lib/timeout.js';
 import { useFlash } from '../lib/useFlash.js';
+import { useSwipeDismiss } from '../lib/useSwipeDismiss.js';
 
 // The join code, big, with Share (a link that fills the code in) and Copy.
 export function InviteCode({ circle }) {
@@ -36,6 +37,7 @@ export function InviteCode({ circle }) {
 export default function InviteSheet({ circle, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const sheet = useSwipeDismiss(onClose);
 
   // For a code that reached the wrong person: the old one stops working for anyone not yet in.
   async function renew() {
@@ -57,8 +59,8 @@ export default function InviteSheet({ circle, onClose }) {
   }
 
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet panel" role="dialog" aria-modal="true" aria-label="Invite family" onClick={(e) => e.stopPropagation()}>
+    <div className="sheet-backdrop" onClick={sheet.dismiss}>
+      <div ref={sheet.ref} {...sheet.handlers} className="sheet panel" role="dialog" aria-modal="true" aria-label="Invite family" onClick={(e) => e.stopPropagation()}>
         <h2>Invite family</h2>
         <p className="muted">
           Anyone with this code can join {circle.personName}’s circle and see everything in it. Share it only with people who care for them.
@@ -68,7 +70,7 @@ export default function InviteSheet({ circle, onClose }) {
         <button className="card-action link-btn" onClick={renew} disabled={busy}>
           {busy ? 'Making a new code…' : 'Code went to the wrong person? Get a new code'}
         </button>
-        <button className="btn" onClick={onClose}>Close</button>
+        <button className="btn" onClick={sheet.dismiss}>Close</button>
       </div>
     </div>
   );

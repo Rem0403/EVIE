@@ -358,6 +358,70 @@ describe('deleting a circle and old codes', () => {
   });
 });
 
+describe('circle icon', () => {
+  it('can be set when the circle is made, and changed by any member', async () => {
+    const db = as('carol');
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'circles/c2'), { name: "Sam's Care Circle", personName: 'Sam', joinCode: 'SAM-CCCC-DDDD', memberIds: ['carol'], icon: 'seedling', iconColor: 'gold' });
+    batch.set(doc(db, 'circles/c2/members/carol'), { displayName: 'Carol' });
+    batch.set(doc(db, 'joinCodes/SAM-CCCC-DDDD'), { circleId: 'c2' });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(updateDoc(doc(as('bob'), 'circles/c1'), { icon: 'fish', iconColor: 'blue' }));
+  });
+  it('only takes the listed symbols and colors, and only from members', async () => {
+    await assertFails(updateDoc(doc(as('bob'), 'circles/c1'), { icon: '<script>' }));
+    await assertFails(updateDoc(doc(as('bob'), 'circles/c1'), { icon: 'heart', iconColor: '#ff0000' }));
+    await assertFails(updateDoc(doc(as('eve'), 'circles/c1'), { icon: 'heart' }));
+  });
+  it('can be a small JPEG photo, or none, but never another kind of image or link', async () => {
+    await assertSucceeds(updateDoc(doc(as('bob'), 'circles/c1'), { iconPhoto: `data:image/jpeg;base64,/9j/${'A'.repeat(59900)}==` }));
+    await assertSucceeds(updateDoc(doc(as('bob'), 'circles/c1'), { iconPhoto: '' }));
+    await assertFails(updateDoc(doc(as('bob'), 'circles/c1'), { iconPhoto: 'data:image/svg+xml;base64,PHN2Zz4=' }));
+    await assertFails(updateDoc(doc(as('bob'), 'circles/c1'), { iconPhoto: 'https://lh3.googleusercontent.com/a/x' }));
+    await assertFails(updateDoc(doc(as('bob'), 'circles/c1'), { iconPhoto: `data:image/jpeg;base64,${'A'.repeat(60000)}` }));
+    await assertFails(updateDoc(doc(as('eve'), 'circles/c1'), { iconPhoto: '' }));
+  });
+});
+
+describe('profile pictures', () => {
+  const JPEG = `data:image/jpeg;base64,/9j/${'A'.repeat(59900)}==`; // near the 60,000 limit
+  const GOOGLE = 'https://lh3.googleusercontent.com/a/ACg8ocKxyz=s96-c';
+  beforeEach(() => env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'circles/c1/members/bob'), { displayName: 'Bob' })));
+  const setPhoto = (uid, who, photo) => updateDoc(doc(as(uid), `circles/c1/members/${who}`), { photo });
+
+  it('lets you set, change and remove your own picture', async () => {
+    await assertSucceeds(setPhoto('bob', 'bob', JPEG));
+    await assertSucceeds(setPhoto('bob', 'bob', GOOGLE));
+    await assertSucceeds(setPhoto('bob', 'bob', ''));
+  });
+  it("stops you changing someone else's picture", async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'circles/c1/members/alice'), { displayName: 'Alice' }));
+    await assertFails(setPhoto('bob', 'alice', JPEG));
+    await assertFails(setPhoto('eve', 'bob', JPEG));
+  });
+  it('only takes a small JPEG or a Google picture, never a script or another site', async () => {
+    await assertFails(setPhoto('bob', 'bob', 'data:image/svg+xml;base64,PHN2Zz4='));
+    await assertFails(setPhoto('bob', 'bob', 'javascript:alert(1)'));
+    await assertFails(setPhoto('bob', 'bob', 'https://tracker.example/pixel.jpg'));
+    await assertFails(setPhoto('bob', 'bob', 'https://lh3.googleusercontent.com.evil.example/a'));
+    await assertFails(setPhoto('bob', 'bob', `data:image/jpeg;base64,${'A'.repeat(60000)}`));
+    await assertFails(setPhoto('bob', 'bob', 42));
+  });
+  it('can come with a new circle or a join', async () => {
+    const db = as('carol');
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'circles/c2'), { name: "Sam's Care Circle", personName: 'Sam', joinCode: 'SAM-AAAA-BBBB', memberIds: ['carol'] });
+    batch.set(doc(db, 'circles/c2/members/carol'), { displayName: 'Carol', photo: JPEG });
+    batch.set(doc(db, 'joinCodes/SAM-AAAA-BBBB'), { circleId: 'c2' });
+    await assertSucceeds(batch.commit());
+    const eve = as('eve');
+    const join2 = writeBatch(eve);
+    join2.update(doc(eve, 'circles/c1'), { memberIds: arrayUnion('eve') });
+    join2.set(doc(eve, 'circles/c1/members/eve'), { displayName: 'Eve', joinCode: CODE, photo: GOOGLE });
+    await assertSucceeds(join2.commit());
+  });
+});
+
 describe('what circles, members, resources and goals may hold', () => {
   it('refuses unknown fields and oversized values', async () => {
     await assertFails(setDoc(doc(as('carol'), 'circles/c9'), { name: 'X', personName: 'X', joinCode: 'X-AAAA-BBBB', memberIds: ['carol'], admin: true }));

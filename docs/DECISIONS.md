@@ -37,7 +37,7 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 - **Tradeoffs:** Goals load with the circle (no paging); fine for the handful a family works on.
 
 **A Getting started checklist instead of a tutorial.** Revisitable if testers still find home confusing. 2026-09-30.
-- **Why:** Tester feedback said home was cluttered for a first-time user. A tour of coach marks breaks whenever the layout changes and is usually skipped. The checklist replaces the empty cards on a new circle (the medication prompt, and the handoff card until there's something to hand off; the Seizures and Sleep tiles always stay, at Remy's request), and each step opens the place to do it. Steps tick off from the circle's own data, so a later member sees what's already done.
+- **Why:** Tester feedback said home was cluttered for a first-time user. A tour of coach marks breaks whenever the layout changes and is usually skipped. The checklist replaces the empty cards on a new circle (the medication prompt, and the handoff card until there's something to hand off; the Seizures and Sleep tiles always stay, at Remy's request), and each step opens the place to do it. Steps drop off as the circle's own data shows them done, so a later member sees only what's left. No progress count or numbered circles: the list is short enough that they were decoration.
 - **Tradeoffs:** "Hide" is remembered per phone, not per person.
 
 **Setup asks for the care team and medications, and writes the circle only at the end.** 2026-09-30.
@@ -71,6 +71,12 @@ Settled choices and why. Reopen one only with new evidence, and record the chang
 - **Why:** There are no passwords, so anyone in the circle, or holding one of its phones, can read everything.
 - **How it works:** `src/lib/privacy.js` refuses text that looks like a Social Security, Medicaid, Medicare or insurance number in the care plan, schedule, resources and quick-log notes. It skips seizure notes so saving a seizure is never blocked.
 - **Tradeoffs:** Pattern matching can't catch every format, and a phone number written without dashes next to "Medicaid" is refused, with a message saying to add dashes.
+
+**Profile pictures are shared with the circle, stored in the member record as a small JPEG.** Final. 2026-09-30.
+- **Why:** Caregivers asked to see who is who. A 240px square JPEG is 10–30 KB, so it fits in the member document without Cloud Storage (which needs the Blaze plan).
+- **How it works:** You frame the photo in **Move and scale** (`src/components/PhotoCropper.jsx`, maths in `src/lib/crop.js`); the phone then crops and shrinks it (`src/lib/avatar.js`). `members/{uid}.photo` holds that JPEG as a data URL, the Google account picture's URL, or `''` once removed. The rules accept only those forms, at most 60,000 characters, and only on your own record. Everyone in the circle can read it. With Google sign-in, the Google picture is set once unless you have a photo or removed yours.
+- **Circle icon photos** (`circles/{id}.iconPhoto`) work the same way: a small JPEG made by the app, or `''`, at most 60,000 characters, set by any member. It may well be a photo of the person the circle is for, so like everything in the circle it's visible only to its members.
+- **Tradeoffs:** A photo is sent to Firestore, unlike seizure clips and entry photos, which stay on the phone (see the next decision; this only covers caregivers' own profile pictures). A Google picture loads from Google's servers. Leaving a circle deletes your member record and your photo with it.
 
 **Video and photos stay on the phone that recorded them (IndexedDB).** Revisitable: optional shared storage if families ask for it. 2026-09-26.
 - **Why:** Privacy, and Cloud Storage needs the Blaze plan.

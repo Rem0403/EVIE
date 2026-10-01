@@ -37,12 +37,14 @@
 ## Smoke test after every deploy
 - [ ] Welcome → **Try a demo with sample data** → home shows Maya's week and the demo banner; **End demo** returns to the welcome screen.
 - [ ] Home → **Invite** → **Copy code** copies the code; **Share invite link** → opening the link on another device shows the join form with the code filled in.
-- [ ] **Continue with Google** on phone A, then in a second browser **Continue with Google** with the same account → it opens the same circle. **More → Sign out of Google** returns to the welcome screen.
+- [ ] **Continue with Google** on phone A, then in a second browser **Continue with Google** with the same account → it opens the same circle. **Sign out of Google** (in More, or in your profile) returns to the welcome screen, which shows who's signed in with its own **Sign out**.
 - [ ] **More → Exit EVIE** → "All changes saved" online; in airplane mode → "Saved on this phone"; **Open EVIE again** returns to where you were.
-- [ ] Start a care circle → step through names, one caregiver with a phone, and one medication → the circle opens with them in the care plan and Today's meds; Getting started shows 1 of 4 done (medications; emergency needs the seizure plan too). Skipping every step still creates the circle.
+- [ ] Start a care circle → step through names, one caregiver with a phone, and one medication → the circle opens with them in the care plan and Today's meds; Getting started no longer lists medications (emergency still shows: it needs the seizure plan too). Skipping every step still creates the circle.
 - [ ] New circle home: Seizures and Sleep tiles, then the Getting started list (no empty medication or handoff card); each row opens the right place; **Hide this list** keeps it hidden after a reload.
 - [ ] More → Goals → add a goal → **Log practice** → *With help* → the goal shows it under "Last 2 weeks", the timeline shows a Goal entry, the Goals filter chip finds it, and the Care summary lists it under Goals (screen and PDF). Edit → **Met** hides Log practice.
 - [ ] More → People: the person who started the circle sees **Remove** next to others; removing someone changes the join code, and their phone shows "You're no longer in …". **Get a new code** in the invite sheet makes the old code fail.
+- [ ] Circle icon: **Start a care circle** opens on *Choose an icon for the circle* (step 1 of 4); pick a symbol and color (or **Photo** → **Choose photo** → frame it → **Choose**), finish setup, and the home screen shows it top left. Tap it → change it → **Done**; phone B sees the new icon.
+- [ ] Profile pictures: start a circle → **Choose photo** on the first step opens **Move and scale**: drag and pinch to frame your face, then **Choose** shows it in the circle; tap your picture on the home screen → **Remove photo** shows your initials; **Use Google photo** appears once signed in with Google. Phone B sees phone A's picture in More → People.
 - [ ] More → **Leave this circle** (online) → the welcome screen says you left, and the phone's copy is cleared.
 - [ ] Support: a resource's Website button opens a normal web page.
 - [ ] Care summary 90 days: shows "Loading 210 days of history…" briefly, then the comparison with the previous 90 days; Download PDF is off until then.

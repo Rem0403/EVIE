@@ -12,6 +12,7 @@
     "test:rules": "firebase emulators:exec --only firestore --project demo-evie \"vitest run test/firestore.rules.test.js\""
   },
   "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "firebase": "^12.19.0",
     "jspdf": "^4.2.1",
     "react": "^18.3.1",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "^1.63.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^6.1.1",
